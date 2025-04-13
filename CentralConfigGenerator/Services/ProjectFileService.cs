@@ -7,14 +7,14 @@ public class ProjectFileService(
     IFileService fileService
 ) : IProjectFileService
 {
-    public async Task<IEnumerable<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory)
+    public async Task<IReadOnlyCollection<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory)
     {
-        MsgExtensions.LogInformation("Scanning directory for project files: {0}", directory.FullName);
+        MsgLogger.LogInformation("Scanning directory for project files: {0}", directory.FullName);
 
         var projectFiles = new List<ProjectFile>();
         var csprojFiles = directory.GetFiles("*.csproj", SearchOption.AllDirectories);
 
-        MsgExtensions.LogInformation("Found {0} .csproj files", csprojFiles.Length);
+        MsgLogger.LogInformation("Found {0} .csproj files", csprojFiles.Length);
 
         foreach (var fullName in csprojFiles.Select(f => f.FullName))
         {
@@ -29,7 +29,7 @@ public class ProjectFileService(
             }
             catch (Exception ex)
             {
-                MsgExtensions.LogError(ex, "Error reading project file: {0}", fullName);
+                MsgLogger.LogError(ex, "Error reading project file: {0}", fullName);
             }
         }
 
@@ -39,5 +39,5 @@ public class ProjectFileService(
 
 public interface IProjectFileService
 {
-    Task<IEnumerable<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory);
+    Task<IReadOnlyCollection<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory);
 }

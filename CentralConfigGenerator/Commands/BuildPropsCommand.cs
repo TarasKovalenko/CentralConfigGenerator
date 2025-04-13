@@ -1,7 +1,6 @@
 ﻿using System.Xml.Linq;
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
-using CentralConfigGenerator.Core.Models;
 using CentralConfigGenerator.Extensions;
 using CentralConfigGenerator.Services;
 
@@ -9,99 +8,75 @@ namespace CentralConfigGenerator.Commands;
 
 public class BuildPropsCommand(
     IProjectAnalyzer projectAnalyzer,
+    IProjectFileService projectFileService,
     IBuildPropsGenerator buildPropsGenerator,
     IFileService fileService
 )
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        MsgExtensions.LogWarning("Generating Directory.Build.props for directory: {0}", directory.FullName);
+        MsgLogger.LogWarning("Generating Directory.Build.props for directory: {0}", directory.FullName);
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Build.props");
 
-        // Check if file already exists
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            MsgExtensions.LogWarning("File Directory.Build.props already exists. Use --overwrite to replace it.");
+            MsgLogger.LogWarning("File Directory.Build.props already exists. Use --overwrite to replace it.");
             return;
         }
 
-        // Scan for project files
-        var projectFiles = new List<ProjectFile>();
-        foreach (var fullName in directory.GetFiles("*.csproj", SearchOption.AllDirectories).Select(f => f.FullName))
-        {
-            try
-            {
-                var content = await fileService.ReadAllTextAsync(fullName);
-                projectFiles.Add(new ProjectFile
-                {
-                    Path = fullName,
-                    Content = content
-                });
-            }
-            catch (Exception ex)
-            {
-                MsgExtensions.LogError(ex, "Error reading project file: {0}", fullName);
-            }
-        }
+        var projectFiles = await projectFileService.ScanDirectoryForProjectsAsync(directory);
 
         if (projectFiles.Count == 0)
         {
-            MsgExtensions.LogWarning("No .csproj files found in the directory tree.");
+            MsgLogger.LogWarning("No .csproj files found in the directory tree.");
             return;
         }
 
-        MsgExtensions.LogInformation("Found {0} project files", projectFiles.Count);
+        MsgLogger.LogInformation("Found {0} project files", projectFiles.Count);
 
-        // Extract common properties
         var commonProperties = projectAnalyzer.ExtractCommonProperties(projectFiles);
-        MsgExtensions.LogInformation("Identified {0} common properties", commonProperties.Count);
+        MsgLogger.LogInformation("Identified {0} common properties", commonProperties.Count);
 
         foreach (var prop in commonProperties)
         {
-            MsgExtensions.LogDebug("Common property: {0} = {1}", prop.Key, prop.Value);
+            MsgLogger.LogDebug("Common property: {0} = {1}", prop.Key, prop.Value);
         }
 
-        // Generate build props content
         var buildPropsContent = buildPropsGenerator.GenerateBuildPropsContent(commonProperties);
 
-        // Write to file
         await fileService.WriteAllTextAsync(targetPath, buildPropsContent);
 
-        MsgExtensions.LogInformation("Created Directory.Build.props at {0}", targetPath);
+        MsgLogger.LogInformation("Created Directory.Build.props at {0}", targetPath);
 
-        MsgExtensions.LogInformation("Removing centralized properties from project files...");
+        MsgLogger.LogInformation("Removing centralized properties from project files...");
 
         foreach (var projectFile in projectFiles)
         {
             try
             {
-                // Load the project file
                 var xDoc = XDocument.Parse(projectFile.Content);
                 var changed = false;
 
-                // Find properties that are now in Directory.Build.props
                 foreach (var property in commonProperties.Keys)
                 {
                     var elements = xDoc.Descendants(property).ToList();
                     foreach (var element in elements)
                     {
-                        // Remove the property from the project file
                         element.Remove();
                         changed = true;
                     }
                 }
 
-                // Save the modified project file if changes were made
                 if (changed)
                 {
                     await fileService.WriteAllTextAsync(projectFile.Path, xDoc.ToString());
-                    MsgExtensions.LogInformation("Updated project file: {0}", projectFile.Path);
+                    MsgLogger.LogInformation("Updated project file: {0}", projectFile.Path);
                 }
             }
             catch (Exception ex)
             {
-                MsgExtensions.LogError(ex, "Error updating project file: {0}", projectFile.Path);
+                MsgLogger.LogError(ex, "Error updating project file: {0}", projectFile.Path);
             }
         }
     }
