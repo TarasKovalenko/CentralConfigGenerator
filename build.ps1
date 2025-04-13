@@ -14,7 +14,7 @@ Write-Host "Restoring packages..." -ForegroundColor Cyan
 dotnet restore
 
 Write-Host "Building solution..." -ForegroundColor Cyan
-dotnet build --no-restore
+dotnet build --no-restore -c Release
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Build completed successfully!" -ForegroundColor Green

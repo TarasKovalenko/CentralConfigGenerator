@@ -1,21 +1,20 @@
 ﻿using CentralConfigGenerator.Core.Models;
-using Microsoft.Extensions.Logging;
+using CentralConfigGenerator.Extensions;
 
 namespace CentralConfigGenerator.Services;
 
 public class ProjectFileService(
-    IFileService fileService,
-    ILogger<ProjectFileService> logger
+    IFileService fileService
 ) : IProjectFileService
 {
     public async Task<IEnumerable<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory)
     {
-        logger.LogInformation("Scanning directory for project files: {Directory}", directory.FullName);
+        MsgExtensions.LogInformation("Scanning directory for project files: {0}", directory.FullName);
 
         var projectFiles = new List<ProjectFile>();
         var csprojFiles = directory.GetFiles("*.csproj", SearchOption.AllDirectories);
 
-        logger.LogInformation("Found {Count} .csproj files", csprojFiles.Length);
+        MsgExtensions.LogInformation("Found {0} .csproj files", csprojFiles.Length);
 
         foreach (var fullName in csprojFiles.Select(f => f.FullName))
         {
@@ -30,7 +29,7 @@ public class ProjectFileService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error reading project file: {FilePath}", fullName);
+                MsgExtensions.LogError(ex, "Error reading project file: {0}", fullName);
             }
         }
 

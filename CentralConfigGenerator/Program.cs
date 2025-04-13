@@ -4,7 +4,6 @@ using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace CentralConfigGenerator;
 
@@ -105,13 +104,6 @@ internal class Program
 
         // Register file service
         services.AddSingleton<IFileService, FileService>();
-
-        // Register logging
-        services.AddLogging(config =>
-        {
-            config.AddConsole();
-            config.SetMinimumLevel(LogLevel.Information);
-        });
 
         return services.BuildServiceProvider();
     }

@@ -2,13 +2,12 @@
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Core.Models;
+using CentralConfigGenerator.Extensions;
 using CentralConfigGenerator.Services;
-using Microsoft.Extensions.Logging;
 
 namespace CentralConfigGenerator.Commands;
 
 public class PackagesPropsCommand(
-    ILogger<PackagesPropsCommand> logger,
     IPackageAnalyzer packageAnalyzer,
     IPackagesPropsGenerator packagesPropsGenerator,
     IFileService fileService
@@ -16,14 +15,15 @@ public class PackagesPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        logger.LogInformation("Generating Directory.Packages.props for directory: {Directory}", directory.FullName);
+        MsgExtensions.LogInformation("Generating Directory.Packages.props for directory: {0}",
+            directory.FullName);
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Packages.props");
 
         // Check if file already exists
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            logger.LogWarning("File Directory.Packages.props already exists. Use --overwrite to replace it.");
+            MsgExtensions.LogWarning("File Directory.Packages.props already exists. Use --overwrite to replace it.");
             return;
         }
 
@@ -42,25 +42,25 @@ public class PackagesPropsCommand(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error reading project file: {FilePath}", file.FullName);
+                MsgExtensions.LogError(ex, "Error reading project file: {0}", file.FullName);
             }
         }
 
         if (projectFiles.Count == 0)
         {
-            logger.LogWarning("No .csproj files found in the directory tree.");
+            MsgExtensions.LogWarning("No .csproj files found in the directory tree.");
             return;
         }
 
-        logger.LogInformation("Found {Count} project files", projectFiles.Count);
+        MsgExtensions.LogInformation("Found {0} project files", projectFiles.Count);
 
         // Extract package versions
         var packageVersions = packageAnalyzer.ExtractPackageVersions(projectFiles);
-        logger.LogInformation("Identified {Count} unique packages", packageVersions.Count);
+        MsgExtensions.LogInformation("Identified {0} unique packages", packageVersions.Count);
 
         foreach (var package in packageVersions)
         {
-            logger.LogDebug("Package: {PackageName} = {Version}", package.Key, package.Value);
+            MsgExtensions.LogDebug("Package: {0} = {1}", package.Key, package.Value);
         }
 
         // Generate packages props content
@@ -69,9 +69,9 @@ public class PackagesPropsCommand(
         // Write to file
         await fileService.WriteAllTextAsync(targetPath, packagesPropsContent);
 
-        logger.LogInformation("Created Directory.Packages.props at {FilePath}", targetPath);
+        MsgExtensions.LogInformation("Created Directory.Packages.props at {0}", targetPath);
 
-        logger.LogInformation("Removing package version attributes from project files...");
+        MsgExtensions.LogInformation("Removing package version attributes from project files...");
 
         foreach (var projectFile in projectFiles)
         {
@@ -100,12 +100,14 @@ public class PackagesPropsCommand(
                 if (changed)
                 {
                     await fileService.WriteAllTextAsync(projectFile.Path, xDoc.ToString());
-                    logger.LogInformation("Updated package references in project file: {FilePath}", projectFile.Path);
+                    MsgExtensions.LogInformation("Updated package references in project file: {0}",
+                        projectFile.Path);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error updating package references in project file: {FilePath}", projectFile.Path);
+                MsgExtensions.LogError(ex, "Error updating package references in project file: {0}",
+                    projectFile.Path);
             }
         }
     }

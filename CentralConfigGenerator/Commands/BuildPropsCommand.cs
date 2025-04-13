@@ -2,13 +2,12 @@
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Core.Models;
+using CentralConfigGenerator.Extensions;
 using CentralConfigGenerator.Services;
-using Microsoft.Extensions.Logging;
 
 namespace CentralConfigGenerator.Commands;
 
 public class BuildPropsCommand(
-    ILogger<BuildPropsCommand> logger,
     IProjectAnalyzer projectAnalyzer,
     IBuildPropsGenerator buildPropsGenerator,
     IFileService fileService
@@ -16,14 +15,14 @@ public class BuildPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        logger.LogWarning("Generating Directory.Build.props for directory: {Directory}", directory.FullName);
+        MsgExtensions.LogWarning("Generating Directory.Build.props for directory: {0}", directory.FullName);
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Build.props");
 
         // Check if file already exists
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            logger.LogWarning("File Directory.Build.props already exists. Use --overwrite to replace it.");
+            MsgExtensions.LogWarning("File Directory.Build.props already exists. Use --overwrite to replace it.");
             return;
         }
 
@@ -42,25 +41,25 @@ public class BuildPropsCommand(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error reading project file: {FilePath}", fullName);
+                MsgExtensions.LogError(ex, "Error reading project file: {0}", fullName);
             }
         }
 
         if (projectFiles.Count == 0)
         {
-            logger.LogWarning("No .csproj files found in the directory tree.");
+            MsgExtensions.LogWarning("No .csproj files found in the directory tree.");
             return;
         }
 
-        logger.LogInformation("Found {Count} project files", projectFiles.Count);
+        MsgExtensions.LogInformation("Found {0} project files", projectFiles.Count);
 
         // Extract common properties
         var commonProperties = projectAnalyzer.ExtractCommonProperties(projectFiles);
-        logger.LogInformation("Identified {Count} common properties", commonProperties.Count);
+        MsgExtensions.LogInformation("Identified {0} common properties", commonProperties.Count);
 
         foreach (var prop in commonProperties)
         {
-            logger.LogDebug("Common property: {PropertyName} = {PropertyValue}", prop.Key, prop.Value);
+            MsgExtensions.LogDebug("Common property: {0} = {1}", prop.Key, prop.Value);
         }
 
         // Generate build props content
@@ -69,9 +68,9 @@ public class BuildPropsCommand(
         // Write to file
         await fileService.WriteAllTextAsync(targetPath, buildPropsContent);
 
-        logger.LogInformation("Created Directory.Build.props at {FilePath}", targetPath);
+        MsgExtensions.LogInformation("Created Directory.Build.props at {0}", targetPath);
 
-        logger.LogInformation("Removing centralized properties from project files...");
+        MsgExtensions.LogInformation("Removing centralized properties from project files...");
 
         foreach (var projectFile in projectFiles)
         {
@@ -97,12 +96,12 @@ public class BuildPropsCommand(
                 if (changed)
                 {
                     await fileService.WriteAllTextAsync(projectFile.Path, xDoc.ToString());
-                    logger.LogInformation("Updated project file: {FilePath}", projectFile.Path);
+                    MsgExtensions.LogInformation("Updated project file: {0}", projectFile.Path);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error updating project file: {FilePath}", projectFile.Path);
+                MsgExtensions.LogError(ex, "Error updating project file: {0}", projectFile.Path);
             }
         }
     }
