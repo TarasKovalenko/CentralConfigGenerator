@@ -1,51 +1,44 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <IncludeBuildOutput>true</IncludeBuildOutput>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>CentralConfigGenerator</PackageId>
-
-        <PackAsTool>true</PackAsTool>
-        <ToolCommandName>central-config</ToolCommandName>
-        <PackageOutputPath>./nupkg</PackageOutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>CentralConfigGenerator</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>central-config</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>
             A modern .NET tool for automatically generating centralized configuration files for .NET projects. CentralConfig analyzes your solution structure and creates properly configured `Directory.Build.props` and `Directory.Packages.props` files to standardize settings across your projects.
         </Description>
-        <Version>1.0.0</Version>
-        <Authors>Taras Kovalenko</Authors>
-        <Copyright>Copyright Taras Kovalenko</Copyright>
-        <PackageTags>dotnet;msbuild;build;props;packages;centralized;configuration;directory-build-props;sdk;cli;tool;nuget</PackageTags>
-        <Product>CentralConfigGenerator</Product>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/TarasKovalenko/CentralConfigGenerator</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/TarasKovalenko/CentralConfigGenerator.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <NoPackageAnalysis>false</NoPackageAnalysis>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\CentralConfigGenerator.Core\CentralConfigGenerator.Core.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4"/>
-        <PackageReference Include="Spectre.Console" Version="0.50.0"/>
-        <PackageReference Include="Spectre.Console.Cli" Version="0.50.0"/>
-        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="docs\README.md" Pack="true" PackagePath="\"/>
-    </ItemGroup>
-
+    <Version>1.0.0</Version>
+    <Authors>Taras Kovalenko</Authors>
+    <Copyright>Copyright Taras Kovalenko</Copyright>
+    <PackageTags>dotnet;msbuild;build;props;packages;centralized;configuration;directory-build-props;sdk;cli;tool;nuget</PackageTags>
+    <Product>CentralConfigGenerator</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/TarasKovalenko/CentralConfigGenerator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TarasKovalenko/CentralConfigGenerator.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <NoPackageAnalysis>false</NoPackageAnalysis>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\CentralConfigGenerator.Core\CentralConfigGenerator.Core.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="docs\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 </Project>

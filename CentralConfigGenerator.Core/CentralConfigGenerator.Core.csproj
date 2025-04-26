@@ -1,15 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <PackageReference Include="NuGet.Versioning" Version="6.13.2" />
-      <PackageReference Include="Spectre.Console" Version="0.50.0" />
-      <PackageReference Include="Spectre.Console.Cli" Version="0.50.0" />
-    </ItemGroup>
-
+  <PropertyGroup />
+  
+  <ItemGroup>
+    <PackageReference Include="NuGet.Versioning" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+  </ItemGroup>
 </Project>
