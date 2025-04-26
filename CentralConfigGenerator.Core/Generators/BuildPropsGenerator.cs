@@ -14,38 +14,29 @@ public class BuildPropsGenerator : IBuildPropsGenerator
 
         var propertyGroup = xDoc.Root!.Element("PropertyGroup")!;
 
-        // Common .NET properties to include by default if not overridden
-        var defaultProperties = new Dictionary<string, string>
+        // Define the required properties we want to include
+        var requiredPropertyNames = new[] { "TargetFramework", "ImplicitUsings", "Nullable" };
+        
+        // Add the properties that match our required list
+        foreach (var propertyName in requiredPropertyNames)
         {
-            { "LangVersion", "latest" },
-            { "Nullable", "enable" },
-            { "ImplicitUsings", "enable" }
-        };
-
-        // First add common properties found in projects
-        foreach (var property in commonProperties.OrderBy(p => p.Key))
-        {
-            propertyGroup.Add(new XElement(property.Key, property.Value));
-
-            // Remove from defaults if already covered
-            if (defaultProperties.ContainsKey(property.Key))
+            if (commonProperties.TryGetValue(propertyName, out var propertyValue))
             {
-                defaultProperties.Remove(property.Key);
+                propertyGroup.Add(new XElement(propertyName, propertyValue));
+            }
+            else
+            {
+                // Add default values for required properties that weren't found in the projects
+                switch (propertyName)
+                {
+                    case "ImplicitUsings":
+                    case "Nullable":
+                        propertyGroup.Add(new XElement(propertyName, "enable"));
+                        break;
+                }
             }
         }
 
-        // Now add any remaining default properties
-        foreach (var property in defaultProperties)
-        {
-            propertyGroup.Add(new XElement(property.Key, property.Value));
-        }
-
-        // Format the XML nicely with proper indentation
         return xDoc.ToString();
     }
-}
-
-public interface IBuildPropsGenerator
-{
-    string GenerateBuildPropsContent(Dictionary<string, string> commonProperties);
 }

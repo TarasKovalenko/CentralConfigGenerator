@@ -3,29 +3,26 @@ using CentralConfigGenerator.Commands;
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Services;
+using CentralConfigGenerator.Services.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CentralConfigGenerator;
 
-internal class Program
+public class Program
 {
     static async Task<int> Main(string[] args)
     {
-        // Setup dependency injection
         var services = ConfigureServices();
 
-        // Create root command
         var rootCommand = new RootCommand
         {
             Description = "A tool to generate centralized configuration files for .NET projects"
         };
 
-        // Create commands
         var buildCommand = new Command("build", "Generate Directory.Build.props file");
         var packagesCommand = new Command("packages", "Generate Directory.Packages.props file");
         var allCommand = new Command("all", "Generate both Directory.Build.props and Directory.Packages.props files");
 
-        // Create common options
         var directoryOption = new Option<DirectoryInfo>(
             ["--directory", "-d"],
             () => new DirectoryInfo(Directory.GetCurrentDirectory()),
@@ -44,7 +41,6 @@ internal class Program
             "Enable verbose logging"
         );
 
-        // Add options to commands
         buildCommand.AddOption(directoryOption);
         buildCommand.AddOption(overwriteOption);
         buildCommand.AddOption(verboseOption);
@@ -57,53 +53,55 @@ internal class Program
         allCommand.AddOption(overwriteOption);
         allCommand.AddOption(verboseOption);
 
-        // Set command handlers
-        buildCommand.SetHandler(async (directory, overwrite, verbose) =>
+        buildCommand.SetHandler(async (directory, overwrite, _) =>
         {
             var command = services.GetRequiredService<BuildPropsCommand>();
+            ArgumentNullException.ThrowIfNull(command);
+
             await command.ExecuteAsync(directory, overwrite);
         }, directoryOption, overwriteOption, verboseOption);
 
-        packagesCommand.SetHandler(async (directory, overwrite, verbose) =>
+        packagesCommand.SetHandler(async (directory, overwrite, _) =>
         {
             var command = services.GetRequiredService<PackagesPropsCommand>();
+            ArgumentNullException.ThrowIfNull(command);
+
             await command.ExecuteAsync(directory, overwrite);
         }, directoryOption, overwriteOption, verboseOption);
 
-        allCommand.SetHandler(async (directory, overwrite, verbose) =>
+        allCommand.SetHandler(async (directory, overwrite, _) =>
         {
-            var buildCommand = services.GetRequiredService<BuildPropsCommand>();
-            var packagesCommand = services.GetRequiredService<PackagesPropsCommand>();
+            var buildPropsCommand = services.GetRequiredService<BuildPropsCommand>();
+            ArgumentNullException.ThrowIfNull(buildPropsCommand);
 
-            await buildCommand.ExecuteAsync(directory, overwrite);
-            await packagesCommand.ExecuteAsync(directory, overwrite);
+            var packagesPropsCommand = services.GetRequiredService<PackagesPropsCommand>();
+            ArgumentNullException.ThrowIfNull(packagesPropsCommand);
+
+            await buildPropsCommand.ExecuteAsync(directory, overwrite);
+            await packagesPropsCommand.ExecuteAsync(directory, overwrite);
         }, directoryOption, overwriteOption, verboseOption);
 
-        // Add commands to root
         rootCommand.AddCommand(buildCommand);
         rootCommand.AddCommand(packagesCommand);
         rootCommand.AddCommand(allCommand);
 
-        // Run the command
         return await rootCommand.InvokeAsync(args);
     }
 
-    static ServiceProvider ConfigureServices()
+    public static ServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
 
-        // Register core services
         services.AddSingleton<IProjectAnalyzer, ProjectAnalyzer>();
         services.AddSingleton<IPackageAnalyzer, PackageAnalyzer>();
         services.AddSingleton<IBuildPropsGenerator, BuildPropsGenerator>();
         services.AddSingleton<IPackagesPropsGenerator, PackagesPropsGenerator>();
 
-        // Register commands
         services.AddTransient<BuildPropsCommand>();
         services.AddTransient<PackagesPropsCommand>();
 
-        // Register file service
         services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IProjectFileService, ProjectFileService>();
 
         return services.BuildServiceProvider();
     }

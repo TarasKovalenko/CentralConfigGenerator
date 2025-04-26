@@ -1,5 +1,6 @@
 ﻿using CentralConfigGenerator.Core.Models;
 using CentralConfigGenerator.Extensions;
+using CentralConfigGenerator.Services.Abstractions;
 
 namespace CentralConfigGenerator.Services;
 
@@ -35,9 +36,4 @@ public class ProjectFileService(
 
         return projectFiles;
     }
-}
-
-public interface IProjectFileService
-{
-    Task<IReadOnlyCollection<ProjectFile>> ScanDirectoryForProjectsAsync(DirectoryInfo directory);
 }

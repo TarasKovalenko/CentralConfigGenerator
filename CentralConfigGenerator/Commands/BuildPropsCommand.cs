@@ -2,7 +2,7 @@
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Extensions;
-using CentralConfigGenerator.Services;
+using CentralConfigGenerator.Services.Abstractions;
 
 namespace CentralConfigGenerator.Commands;
 
@@ -15,7 +15,7 @@ public class BuildPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        MsgLogger.LogWarning("Generating Directory.Build.props for directory: {0}", directory.FullName);
+        MsgLogger.LogInformation("Generating Directory.Build.props for directory: {0}", directory.FullName);
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Build.props");
 
@@ -51,6 +51,9 @@ public class BuildPropsCommand(
 
         MsgLogger.LogInformation("Removing centralized properties from project files...");
 
+        // Define the required properties we want to remove from individual projects
+        var requiredPropertyNames = new[] { "TargetFramework", "ImplicitUsings", "Nullable" };
+
         foreach (var projectFile in projectFiles)
         {
             try
@@ -58,10 +61,12 @@ public class BuildPropsCommand(
                 var xDoc = XDocument.Parse(projectFile.Content);
                 var changed = false;
 
-                foreach (var property in commonProperties.Keys)
+                foreach (var property in requiredPropertyNames)
                 {
-                    var elements = xDoc.Descendants(property).ToList();
-                    foreach (var element in elements)
+                    // Find all property elements with the specified name
+                    var propertyElements = xDoc.Descendants(property).ToList();
+                    
+                    foreach (var element in propertyElements)
                     {
                         element.Remove();
                         changed = true;

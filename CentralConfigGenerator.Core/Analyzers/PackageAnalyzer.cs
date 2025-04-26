@@ -1,5 +1,6 @@
 ﻿using System.Xml.Linq;
 using CentralConfigGenerator.Core.Models;
+using Spectre.Console;
 
 namespace CentralConfigGenerator.Core.Analyzers;
 
@@ -42,23 +43,16 @@ public class PackageAnalyzer : IPackageAnalyzer
                             stringVersions[packageName] = versionStr;
                         }
                     }
-                    // todo: Handle other version formats
-                    // For version ranges or other formats, we can't easily compare
-                    // so we'll just keep the first one we found
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // todo: Log error but continue with other projects
-                continue;
+                var errorMessage = $"Error parsing project file: {projectFile.Path}";
+                AnsiConsole.MarkupLineInterpolated($"[red]Error:{errorMessage}[/]");
+                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
             }
         }
 
         return stringVersions;
     }
-}
-
-public interface IPackageAnalyzer
-{
-    Dictionary<string, string> ExtractPackageVersions(IEnumerable<ProjectFile> projectFiles);
 }

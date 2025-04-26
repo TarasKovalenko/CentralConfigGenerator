@@ -17,7 +17,6 @@ public class PackagesPropsGenerator : IPackagesPropsGenerator
 
         var itemGroup = xDoc.Root!.Element("ItemGroup")!;
 
-        // Add packages in alphabetical order
         foreach (var package in packageVersions.OrderBy(p => p.Key))
         {
             itemGroup.Add(
@@ -28,12 +27,6 @@ public class PackagesPropsGenerator : IPackagesPropsGenerator
             );
         }
 
-        // Format the XML nicely with proper indentation
         return xDoc.ToString();
     }
-}
-
-public interface IPackagesPropsGenerator
-{
-    string GeneratePackagesPropsContent(Dictionary<string, string> packageVersions);
 }

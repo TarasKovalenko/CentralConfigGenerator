@@ -2,7 +2,7 @@
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Extensions;
-using CentralConfigGenerator.Services;
+using CentralConfigGenerator.Services.Abstractions;
 
 namespace CentralConfigGenerator.Commands;
 

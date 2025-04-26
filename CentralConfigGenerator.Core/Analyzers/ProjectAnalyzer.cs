@@ -1,5 +1,6 @@
 ﻿using System.Xml.Linq;
 using CentralConfigGenerator.Core.Models;
+using Spectre.Console;
 
 namespace CentralConfigGenerator.Core.Analyzers;
 
@@ -45,16 +46,22 @@ public class ProjectAnalyzer : IProjectAnalyzer
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // todo: Log error but continue with other projects
-                continue;
+                var errorMessage = $"Error extracting properties from project file: {projectFile.Path}";
+                AnsiConsole.MarkupLineInterpolated($"[red]Error:{errorMessage}[/]");
+                AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
             }
         }
 
-        // Define the threshold - properties must appear in at least half of the projects
-        // with the same value to be considered "common"
-        var threshold = Math.Max(1, projectFiles.Count / 2);
+        // Define the threshold - for something to be common, it needs to appear in all projects,
+        // or at least in 2 projects for the case of only 2 projects
+        int threshold = projectFiles.Count switch
+        {
+            <= 1 => projectFiles.Count,
+            2 => 2,
+            _ => (int)Math.Ceiling(projectFiles.Count / 2.0)
+        };
 
         // Find properties that meet the threshold
         var commonProperties = new Dictionary<string, string>();
@@ -64,7 +71,8 @@ public class ProjectAnalyzer : IProjectAnalyzer
             var propertyName = property.Key;
             var mostCommonValue = property.Value.OrderByDescending(v => v.Value).FirstOrDefault();
 
-            // Only include if this property value appears in enough projects
+            // For the property to be common, it should appear in at least 'threshold' number of projects
+            // with the same value
             if (mostCommonValue.Value >= threshold)
             {
                 commonProperties[propertyName] = mostCommonValue.Key;
@@ -73,9 +81,4 @@ public class ProjectAnalyzer : IProjectAnalyzer
 
         return commonProperties;
     }
-}
-
-public interface IProjectAnalyzer
-{
-    Dictionary<string, string> ExtractCommonProperties(IReadOnlyCollection<ProjectFile> projectFiles);
 }
