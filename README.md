@@ -173,6 +173,14 @@ central-config all -v
 - For properties to be included in Directory.Build.props, they must appear with identical values in most projects
 - Version conflicts in packages will be resolved by selecting the highest version found
 
+## Local installation
+
+To install the tool locally for development or testing, clone the repository and run:
+
+```bash
+dotnet tool install --global --add-source .\CentralConfigGenerator\nupkg\ CentralConfigGenerator
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
