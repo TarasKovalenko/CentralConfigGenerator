@@ -1,9 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup />
-  
-  <ItemGroup>
-    <PackageReference Include="NuGet.Versioning" />
-    <PackageReference Include="Spectre.Console" />
-    <PackageReference Include="Spectre.Console.Cli" />
-  </ItemGroup>
+    <PropertyGroup/>
+
+    <ItemGroup>
+        <PackageReference Include="NuGet.Configuration" />
+        <PackageReference Include="NuGet.Protocol" />
+        <PackageReference Include="NuGet.Versioning"/>
+        <PackageReference Include="Spectre.Console"/>
+        <PackageReference Include="Spectre.Console.Cli"/>
+    </ItemGroup>
 </Project>

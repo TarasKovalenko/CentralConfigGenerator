@@ -1,4 +1,4 @@
-﻿namespace CentralConfigGenerator.Core.Generators;
+﻿namespace CentralConfigGenerator.Core.Generators.Abstractions;
 
 public interface IPackagesPropsGenerator
 {

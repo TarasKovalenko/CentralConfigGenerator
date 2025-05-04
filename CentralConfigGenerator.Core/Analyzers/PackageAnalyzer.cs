@@ -1,5 +1,7 @@
 ﻿using System.Xml.Linq;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Models;
+using NuGet.Versioning;
 using Spectre.Console;
 
 namespace CentralConfigGenerator.Core.Analyzers;
@@ -8,7 +10,7 @@ public class PackageAnalyzer : IPackageAnalyzer
 {
     public Dictionary<string, string> ExtractPackageVersions(IEnumerable<ProjectFile> projectFiles)
     {
-        var packageVersions = new Dictionary<string, Version>();
+        var packageVersions = new Dictionary<string, NuGetVersion>();
         var stringVersions = new Dictionary<string, string>();
 
         foreach (var projectFile in projectFiles)
@@ -31,17 +33,38 @@ public class PackageAnalyzer : IPackageAnalyzer
 
                     var versionStr = versionAttr.Value;
 
-                    // Store the original string version
-                    stringVersions.TryAdd(packageName, versionStr);
-
-                    // Try to parse as version for comparison
-                    if (Version.TryParse(versionStr, out var version))
+                    // Handle version ranges and variables
+                    if (
+                        VersionRange.TryParse(versionStr, out var versionRange)
+                        && versionRange.HasLowerBound
+                    )
                     {
-                        if (!packageVersions.ContainsKey(packageName) || version > packageVersions[packageName])
+                        var nugetVersion = versionRange.MinVersion;
+
+                        if (
+                            !packageVersions.ContainsKey(packageName)
+                            || nugetVersion > packageVersions[packageName]
+                        )
                         {
-                            packageVersions[packageName] = version;
+                            packageVersions[packageName] = nugetVersion;
                             stringVersions[packageName] = versionStr;
                         }
+                    }
+                    else if (NuGetVersion.TryParse(versionStr, out var nugetVersion))
+                    {
+                        if (
+                            !packageVersions.ContainsKey(packageName)
+                            || nugetVersion > packageVersions[packageName]
+                        )
+                        {
+                            packageVersions[packageName] = nugetVersion;
+                            stringVersions[packageName] = versionStr;
+                        }
+                    }
+                    else
+                    {
+                        // For non-parseable versions (like variables), just store them
+                        stringVersions.TryAdd(packageName, versionStr);
                     }
                 }
             }

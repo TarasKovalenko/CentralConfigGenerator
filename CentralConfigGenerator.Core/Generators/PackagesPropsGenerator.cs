@@ -1,4 +1,5 @@
 ﻿using System.Xml.Linq;
+using CentralConfigGenerator.Core.Generators.Abstractions;
 
 namespace CentralConfigGenerator.Core.Generators;
 
@@ -7,8 +8,10 @@ public class PackagesPropsGenerator : IPackagesPropsGenerator
     public string GeneratePackagesPropsContent(Dictionary<string, string> packageVersions)
     {
         var xDoc = new XDocument(
-            new XElement("Project",
-                new XElement("PropertyGroup",
+            new XElement(
+                "Project",
+                new XElement(
+                    "PropertyGroup",
                     new XElement("ManagePackageVersionsCentrally", "true")
                 ),
                 new XElement("ItemGroup")
@@ -20,7 +23,8 @@ public class PackagesPropsGenerator : IPackagesPropsGenerator
         foreach (var package in packageVersions.OrderBy(p => p.Key))
         {
             itemGroup.Add(
-                new XElement("PackageVersion",
+                new XElement(
+                    "PackageVersion",
                     new XAttribute("Include", package.Key),
                     new XAttribute("Version", package.Value)
                 )
