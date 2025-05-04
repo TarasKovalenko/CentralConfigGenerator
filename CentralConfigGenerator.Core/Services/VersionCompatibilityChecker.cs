@@ -1,21 +1,11 @@
+using CentralConfigGenerator.Core.Models;
+using CentralConfigGenerator.Core.Services.Abstractions;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
 namespace CentralConfigGenerator.Core.Services;
-
-public interface IVersionCompatibilityChecker
-{
-    Task<CompatibilityCheckResult> CheckCompatibilityAsync(string packageId, string version);
-}
-
-public class CompatibilityCheckResult
-{
-    public bool IsCompatible { get; set; }
-    public List<string> Issues { get; set; } = new();
-    public string? SuggestedVersion { get; set; }
-}
 
 public class VersionCompatibilityChecker : IVersionCompatibilityChecker
 {
@@ -81,12 +71,5 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
         }
 
         return result;
-    }
-
-    private class VersionIssue
-    {
-        public VersionRange ProblematicVersionRange { get; set; } = VersionRange.None;
-        public string Issue { get; set; } = string.Empty;
-        public string? SuggestedVersion { get; set; }
     }
 }

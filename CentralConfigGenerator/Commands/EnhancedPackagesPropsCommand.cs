@@ -1,7 +1,10 @@
 using System.Xml.Linq;
 using CentralConfigGenerator.Core.Analyzers;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Generators;
+using CentralConfigGenerator.Core.Generators.Abstractions;
 using CentralConfigGenerator.Core.Services;
+using CentralConfigGenerator.Core.Services.Abstractions;
 using CentralConfigGenerator.Services.Abstractions;
 using Spectre.Console;
 

@@ -1,6 +1,8 @@
 ﻿using System.Xml.Linq;
 using CentralConfigGenerator.Core.Analyzers;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Generators;
+using CentralConfigGenerator.Core.Generators.Abstractions;
 using CentralConfigGenerator.Extensions;
 using CentralConfigGenerator.Services.Abstractions;
 

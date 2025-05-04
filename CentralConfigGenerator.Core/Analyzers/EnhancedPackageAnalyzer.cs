@@ -1,14 +1,11 @@
 using System.Xml.Linq;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Models;
 using CentralConfigGenerator.Core.Services;
+using CentralConfigGenerator.Core.Services.Abstractions;
 using NuGet.Versioning;
 
 namespace CentralConfigGenerator.Core.Analyzers;
-
-public interface IEnhancedPackageAnalyzer
-{
-    PackageAnalysisResult AnalyzePackages(IEnumerable<ProjectFile> projectFiles);
-}
 
 public class PackageAnalysisResult
 {
@@ -138,7 +135,7 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
         return result;
     }
 
-    private VersionConflict CreateVersionConflict(string projectPath, string version)
+    private static VersionConflict CreateVersionConflict(string projectPath, string version)
     {
         var conflict = new VersionConflict
         {
@@ -158,7 +155,7 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
         return conflict;
     }
 
-    private void CheckForPrereleaseUsage(string packageName, string version, List<VersionWarning> warnings)
+    private static void CheckForPrereleaseUsage(string packageName, string version, List<VersionWarning> warnings)
     {
         if (NuGetVersion.TryParse(version, out var nugetVersion) && nugetVersion.IsPrerelease)
         {

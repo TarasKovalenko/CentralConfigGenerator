@@ -1,5 +1,6 @@
 using CentralConfigGenerator.Core.Generators;
 using System.Xml.Linq;
+using CentralConfigGenerator.Core.Generators.Abstractions;
 
 namespace CentralConfigGenerator.Core.Tests.Generators;
 

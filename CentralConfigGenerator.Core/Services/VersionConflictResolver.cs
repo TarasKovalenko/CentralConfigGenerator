@@ -1,11 +1,8 @@
+using CentralConfigGenerator.Core.Models;
+using CentralConfigGenerator.Core.Services.Abstractions;
 using NuGet.Versioning;
 
 namespace CentralConfigGenerator.Core.Services;
-
-public interface IVersionConflictResolver
-{
-    string Resolve(string packageName, IEnumerable<string> versions, VersionResolutionStrategy strategy);
-}
 
 public enum VersionResolutionStrategy
 {
@@ -13,13 +10,6 @@ public enum VersionResolutionStrategy
     Lowest,
     MostCommon,
     Manual
-}
-
-public record ParsedVersion
-{
-    public required string Original { get; init; }
-    public NuGetVersion? Parsed { get; init; }
-    public VersionRange? Range { get; init; }
 }
 
 public class VersionConflictResolver : IVersionConflictResolver

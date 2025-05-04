@@ -1,4 +1,5 @@
 using CentralConfigGenerator.Core.Analyzers;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Models;
 
 namespace CentralConfigGenerator.Core.Tests.Analyzers;

@@ -1,12 +1,8 @@
 using CentralConfigGenerator.Core.Analyzers;
+using CentralConfigGenerator.Core.Services.Abstractions;
 using Spectre.Console;
 
 namespace CentralConfigGenerator.Core.Services;
-
-public interface IVersionConflictVisualizer
-{
-    void DisplayResults(PackageAnalysisResult result);
-}
 
 public class VersionConflictVisualizer : IVersionConflictVisualizer
 {
@@ -42,9 +38,19 @@ public class VersionConflictVisualizer : IVersionConflictVisualizer
             {
                 foreach (var detail in conflict.Value)
                 {
-                    var versionType = detail.IsRange ? "Range" :
-                        detail.IsPreRelease ? "Pre-release" :
-                        "Release";
+                    string versionType;
+                    if (detail.IsRange)
+                    {
+                        versionType = "Range";
+                    }
+                    else if (detail.IsPreRelease)
+                    {
+                        versionType = "Pre-release";
+                    }
+                    else
+                    {
+                        versionType = "Release";
+                    }
 
                     conflictTable.AddRow(
                         conflict.Key,

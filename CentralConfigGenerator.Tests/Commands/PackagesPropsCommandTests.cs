@@ -1,6 +1,8 @@
 using CentralConfigGenerator.Commands;
 using CentralConfigGenerator.Core.Analyzers;
+using CentralConfigGenerator.Core.Analyzers.Abstractions;
 using CentralConfigGenerator.Core.Generators;
+using CentralConfigGenerator.Core.Generators.Abstractions;
 using CentralConfigGenerator.Core.Models;
 using CentralConfigGenerator.Services.Abstractions;
 

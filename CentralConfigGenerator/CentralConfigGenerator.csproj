@@ -13,12 +13,13 @@
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>
-            A modern .NET tool for automatically generating centralized configuration files for .NET projects. CentralConfig analyzes your solution structure and creates properly configured `Directory.Build.props` and `Directory.Packages.props` files to standardize settings across your projects.
+            A modern .NET tool for automatically generating centralized configuration files for .NET projects.
+            CentralConfig analyzes your solution structure and creates properly configured `Directory.Build.props` and `Directory.Packages.props` files to standardize settings across your projects.
         </Description>
         <Version>1.1.0</Version>
         <Authors>Taras Kovalenko</Authors>
         <Copyright>Copyright Taras Kovalenko</Copyright>
-        <PackageTags>dotnet;msbuild;build;props;packages;centralized;configuration;directory-build-props;sdk;cli;tool;nuget</PackageTags>
+        <PackageTags>dotnet;msbuild;build;props;packages;centralized;configuration;directory-build-props;sdk;cli;tool;nuget;CPM;centralised</PackageTags>
         <Product>CentralConfigGenerator</Product>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/TarasKovalenko/CentralConfigGenerator</PackageProjectUrl>
@@ -39,6 +40,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="docs\README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>
