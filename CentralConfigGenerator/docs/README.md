@@ -25,7 +25,9 @@ CentralConfigGenerator helps you maintain consistent configuration across multip
 
 1. Automatically generating `Directory.Build.props` files with common project properties
 2. Automatically generating `Directory.Packages.props` files with centralized package versions
-3. Updating your project files to use these centralized configurations
+3. Providing advanced version conflict resolution using NuGet.Versioning
+4. Offering compatibility checking and visual analysis of version conflicts
+5. Updating your project files to use these centralized configurations
 
 ## Installation
 
@@ -37,7 +39,7 @@ dotnet tool install --global CentralConfigGenerator
 
 ### Basic Commands
 
-CentralConfigGenerator provides three main commands:
+CentralConfigGenerator provides four main commands:
 
 ```bash
 # Generate Directory.Build.props file with common project properties
@@ -45,6 +47,9 @@ central-config build [options]
 
 # Generate Directory.Packages.props file for centralized package versions
 central-config packages [options]
+
+# Generate Directory.Packages.props with enhanced version analysis
+central-config packages-enhanced [options]
 
 # Generate both files in one command
 central-config all [options]
@@ -80,14 +85,18 @@ central-config packages
 central-config packages -d C:\Projects\MySolution -v
 ```
 
-#### Generate Both Files
+#### Enhanced Package Analysis
 
 ```bash
-# Generate both files in one command
-central-config all
+# Use enhanced package analysis with visual conflict resolution
+central-config packages-enhanced -d C:\Projects\MySolution -v
 
-# Generate both files with all options
-central-config all -d C:\Projects\MySolution -o -v
+# This will:
+# - Detect version conflicts across projects
+# - Show visual analysis of conflicts
+# - Suggest resolutions based on semantic versioning
+# - Check for compatibility issues
+# - Ask for confirmation before proceeding
 ```
 
 ## How It Works
@@ -115,6 +124,22 @@ The `packages` command:
 3. For each package, uses the highest version found across all projects
 4. Generates a `Directory.Packages.props` file with these package versions
 5. Removes version attributes from `PackageReference` elements in project files
+
+### Enhanced Package Analysis
+
+The `packages-enhanced` command provides advanced features:
+
+1. **Semantic Version Analysis**: Uses NuGet.Versioning for accurate version comparisons
+2. **Conflict Detection**: Identifies and visualizes version conflicts across projects
+3. **Version Range Support**: Handles version ranges (e.g., `[1.0.0,2.0.0)`)
+4. **Pre-release Detection**: Warns about pre-release packages in production code
+5. **Compatibility Checking**: Identifies known issues with specific package versions
+6. **Visual Reports**: Provides clear, color-coded reports of analysis results
+7. **Multiple Resolution Strategies**: Offers different approaches to resolve conflicts:
+   - Highest version (default)
+   - Lowest version
+   - Most common version
+   - Manual resolution
 
 ### Understanding the Generated Files
 
@@ -146,12 +171,64 @@ The `packages` command:
 </Project>
 ```
 
+## Enhanced Features
+
+### Version Conflict Resolution
+
+When multiple projects reference the same package with different versions, the enhanced analyzer:
+
+1. Detects all version conflicts
+2. Shows a detailed conflict report
+3. Applies resolution strategy (highest version by default)
+4. Asks for confirmation before proceeding
+
+Example output:
+```
+Package Analysis Summary
+┌─────────────────────────┬─────────┐
+│ Metric                  │  Value  │
+├─────────────────────────┼─────────┤
+│ Total Packages          │    12   │
+│ Packages with Conflicts │    3    │
+│ Warnings                │    5    │
+└─────────────────────────┴─────────┘
+
+Version Conflicts Detected:
+┌─────────────────────┬──────────────────┬─────────────┬─────────────┐
+│ Package             │ Project          │ Version     │ Type        │
+├─────────────────────┼──────────────────┼─────────────┼─────────────┤
+│ Newtonsoft.Json     │ Project1.csproj  │ 11.0.2      │ Release     │
+│ Newtonsoft.Json     │ Project2.csproj  │ 13.0.3      │ Release     │
+└─────────────────────┴──────────────────┴─────────────┴─────────────┘
+```
+
+### Semantic Versioning Support
+
+The enhanced analyzer properly handles:
+
+- Pre-release versions (e.g., `1.0.0-beta.1`)
+- Build metadata (e.g., `1.0.0+build.123`)
+- Version ranges (e.g., `[1.0.0,2.0.0)`)
+- Floating versions (e.g., `1.0.*`)
+
+### Compatibility Warnings
+
+The tool can warn about:
+
+- Known security vulnerabilities in specific versions
+- Performance issues in certain package versions
+- Significantly outdated packages
+- Pre-release packages in production code
+
 ## Benefits
 
 - **Consistent Configuration**: Ensure all projects use the same framework versions, language features, and code quality settings
 - **Simplified Updates**: Update package versions or project settings in a single location
 - **Reduced Duplication**: Remove redundant configuration from individual project files
 - **Improved Maintainability**: Make your solution more maintainable by centralizing common settings
+- **Version Conflict Resolution**: Automatically detect and resolve package version conflicts
+- **Better Version Management**: Use semantic versioning for accurate version comparisons
+- **Visual Analysis**: See clear, color-coded reports of package analysis results
 
 ## Common Scenarios
 
@@ -167,11 +244,27 @@ cd MySolution
 central-config all -v
 ```
 
+### Resolving Version Conflicts
+
+When you have multiple projects with conflicting package versions:
+
+```bash
+# Use enhanced package analysis to detect and resolve conflicts
+central-config packages-enhanced -v
+
+# The tool will:
+# 1. Show all version conflicts
+# 2. Propose resolutions
+# 3. Ask for confirmation
+# 4. Update all project files
+```
+
 ## Limitations
 
 - Projects with highly customized or conflicting settings may require manual adjustment after running CentralConfigGenerator
 - For properties to be included in Directory.Build.props, they must appear with identical values in most projects
-- Version conflicts in packages will be resolved by selecting the highest version found
+- Version conflicts in packages will be resolved by selecting the highest version found (configurable in enhanced mode)
+- Some version formats (like variables) cannot be automatically resolved
 
 ## Local installation
 

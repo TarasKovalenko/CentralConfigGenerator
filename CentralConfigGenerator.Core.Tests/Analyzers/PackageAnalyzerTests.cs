@@ -242,4 +242,166 @@ public class PackageAnalyzerTests
         result.ShouldContainKey("Package2");
         result["Package2"].ShouldBe("2.0.0-beta+metadata");
     }
+
+    [Fact]
+    public void ExtractPackageVersions_ShouldHandleSemanticVersioning_PrereleaseComparison()
+    {
+        // Arrange
+        var projectFiles = new List<ProjectFile>
+        {
+            new()
+            {
+                Path = "Project1.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.0-alpha.1"" />
+                    </ItemGroup>
+                </Project>"
+            },
+            new()
+            {
+                Path = "Project2.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.0-beta.1"" />
+                    </ItemGroup>
+                </Project>"
+            }
+        };
+
+        // Act
+        var result = _analyzer.ExtractPackageVersions(projectFiles);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(1);
+        result.ShouldContainKey("Package1");
+        // beta > alpha in SemVer
+        result["Package1"].ShouldBe("1.0.0-beta.1");
+    }
+
+    [Fact]
+    public void ExtractPackageVersions_ShouldPreferStableOverPrerelease()
+    {
+        // Arrange
+        var projectFiles = new List<ProjectFile>
+        {
+            new()
+            {
+                Path = "Project1.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.0-preview"" />
+                    </ItemGroup>
+                </Project>"
+            },
+            new()
+            {
+                Path = "Project2.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.0"" />
+                    </ItemGroup>
+                </Project>"
+            }
+        };
+
+        // Act
+        var result = _analyzer.ExtractPackageVersions(projectFiles);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(1);
+        result.ShouldContainKey("Package1");
+        // Stable version > pre-release
+        result["Package1"].ShouldBe("1.0.0");
+    }
+
+    [Fact]
+    public void ExtractPackageVersions_ShouldHandleVersionRanges()
+    {
+        // Arrange
+        var projectFiles = new List<ProjectFile>
+        {
+            new()
+            {
+                Path = "Project1.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""[1.0.0,2.0.0)"" />
+                        <PackageReference Include=""Package2"" Version=""[2.0.0,)"" />
+                    </ItemGroup>
+                </Project>"
+            }
+        };
+
+        // Act
+        var result = _analyzer.ExtractPackageVersions(projectFiles);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(2);
+        result.ShouldContainKey("Package1");
+        // Original range preserved
+        result["Package1"].ShouldBe("[1.0.0,2.0.0)"); 
+        result.ShouldContainKey("Package2");
+        result["Package2"].ShouldBe("[2.0.0,)");
+    }
+
+    [Fact]
+    public void ExtractPackageVersions_ShouldHandleFloatingVersions()
+    {
+        // Arrange
+        var projectFiles = new List<ProjectFile>
+        {
+            new()
+            {
+                Path = "Project1.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.*"" />
+                        <PackageReference Include=""Package2"" Version=""1.*"" />
+                    </ItemGroup>
+                </Project>"
+            }
+        };
+
+        // Act
+        var result = _analyzer.ExtractPackageVersions(projectFiles);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(2);
+        result.ShouldContainKey("Package1");
+        result["Package1"].ShouldBe("1.0.*");
+        result.ShouldContainKey("Package2");
+        result["Package2"].ShouldBe("1.*");
+    }
+
+    [Fact]
+    public void ExtractPackageVersions_ShouldHandleCommitHashVersions()
+    {
+        // Arrange
+        var projectFiles = new List<ProjectFile>
+        {
+            new()
+            {
+                Path = "Project1.csproj",
+                Content = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                    <ItemGroup>
+                        <PackageReference Include=""Package1"" Version=""1.0.0+abcdef123456"" />
+                    </ItemGroup>
+                </Project>"
+            }
+        };
+
+        // Act
+        var result = _analyzer.ExtractPackageVersions(projectFiles);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Count.ShouldBe(1);
+        result.ShouldContainKey("Package1");
+        result["Package1"].ShouldBe("1.0.0+abcdef123456");
+    }
 }

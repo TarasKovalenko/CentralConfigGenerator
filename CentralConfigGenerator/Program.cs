@@ -1,7 +1,8 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using CentralConfigGenerator.Commands;
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Generators;
+using CentralConfigGenerator.Core.Services;
 using CentralConfigGenerator.Services;
 using CentralConfigGenerator.Services.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public class Program
 
         var buildCommand = new Command("build", "Generate Directory.Build.props file");
         var packagesCommand = new Command("packages", "Generate Directory.Packages.props file");
+        var packagesEnhancedCommand = new Command("packages-enhanced", "Generate Directory.Packages.props file with enhanced version analysis");
         var allCommand = new Command("all", "Generate both Directory.Build.props and Directory.Packages.props files");
 
         var directoryOption = new Option<DirectoryInfo>(
@@ -49,6 +51,10 @@ public class Program
         packagesCommand.AddOption(overwriteOption);
         packagesCommand.AddOption(verboseOption);
 
+        packagesEnhancedCommand.AddOption(directoryOption);
+        packagesEnhancedCommand.AddOption(overwriteOption);
+        packagesEnhancedCommand.AddOption(verboseOption);
+
         allCommand.AddOption(directoryOption);
         allCommand.AddOption(overwriteOption);
         allCommand.AddOption(verboseOption);
@@ -69,6 +75,14 @@ public class Program
             await command.ExecuteAsync(directory, overwrite);
         }, directoryOption, overwriteOption, verboseOption);
 
+        packagesEnhancedCommand.SetHandler(async (directory, overwrite, verbose) =>
+        {
+            var command = services.GetRequiredService<EnhancedPackagesPropsCommand>();
+            ArgumentNullException.ThrowIfNull(command);
+
+            await command.ExecuteAsync(directory, overwrite, verbose);
+        }, directoryOption, overwriteOption, verboseOption);
+
         allCommand.SetHandler(async (directory, overwrite, _) =>
         {
             var buildPropsCommand = services.GetRequiredService<BuildPropsCommand>();
@@ -83,6 +97,7 @@ public class Program
 
         rootCommand.AddCommand(buildCommand);
         rootCommand.AddCommand(packagesCommand);
+        rootCommand.AddCommand(packagesEnhancedCommand);
         rootCommand.AddCommand(allCommand);
 
         return await rootCommand.InvokeAsync(args);
@@ -92,14 +107,24 @@ public class Program
     {
         var services = new ServiceCollection();
 
+        // Original services
         services.AddSingleton<IProjectAnalyzer, ProjectAnalyzer>();
         services.AddSingleton<IPackageAnalyzer, PackageAnalyzer>();
         services.AddSingleton<IBuildPropsGenerator, BuildPropsGenerator>();
         services.AddSingleton<IPackagesPropsGenerator, PackagesPropsGenerator>();
 
+        // Enhanced services
+        services.AddSingleton<IVersionConflictResolver, VersionConflictResolver>();
+        services.AddSingleton<IEnhancedPackageAnalyzer, EnhancedPackageAnalyzer>();
+        services.AddSingleton<IVersionConflictVisualizer, VersionConflictVisualizer>();
+        services.AddSingleton<IVersionCompatibilityChecker, VersionCompatibilityChecker>();
+
+        // Commands
         services.AddTransient<BuildPropsCommand>();
         services.AddTransient<PackagesPropsCommand>();
+        services.AddTransient<EnhancedPackagesPropsCommand>();
 
+        // Common services
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IProjectFileService, ProjectFileService>();
 
