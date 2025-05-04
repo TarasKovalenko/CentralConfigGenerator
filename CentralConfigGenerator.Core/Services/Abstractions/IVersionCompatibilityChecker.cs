@@ -4,5 +4,9 @@ namespace CentralConfigGenerator.Core.Services.Abstractions;
 
 public interface IVersionCompatibilityChecker
 {
-    Task<CompatibilityCheckResult> CheckCompatibilityAsync(string packageId, string version);
+    Task<CompatibilityCheckResult> CheckCompatibilityAsync(
+        string packageId,
+        string version,
+        CancellationToken cancellationToken = default
+    );
 }

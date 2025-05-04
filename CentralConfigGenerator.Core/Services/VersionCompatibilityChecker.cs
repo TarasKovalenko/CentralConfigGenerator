@@ -22,7 +22,8 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
 
     public async Task<CompatibilityCheckResult> CheckCompatibilityAsync(
         string packageId,
-        string version
+        string version,
+        CancellationToken cancellationToken = default
     )
     {
         var result = new CompatibilityCheckResult();
@@ -36,7 +37,9 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
         // NuGet API lookup
         try
         {
-            var metadataResource = await _repository.GetResourceAsync<PackageMetadataResource>();
+            var metadataResource = await _repository.GetResourceAsync<PackageMetadataResource>(
+                cancellationToken
+            );
             var searchMetadata = await metadataResource.GetMetadataAsync(
                 packageId,
                 includePrerelease: true,

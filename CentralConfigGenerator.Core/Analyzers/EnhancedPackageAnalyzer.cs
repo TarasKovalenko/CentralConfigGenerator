@@ -42,7 +42,8 @@ public class EnhancedPackageAnalyzer(
 ) : IEnhancedPackageAnalyzer
 {
     public async Task<PackageAnalysisResult> AnalyzePackagesAsync(
-        IEnumerable<ProjectFile> projectFiles
+        IEnumerable<ProjectFile> projectFiles,
+        CancellationToken cancellationToken = default
     )
     {
         var result = new PackageAnalysisResult();
@@ -162,7 +163,7 @@ public class EnhancedPackageAnalyzer(
                         PackageName = packageName,
                         Message =
                             $"Consider upgrading to version {compatibilityResult.SuggestedVersion} for better compatibility.",
-                        Level = WarningLevel.Warning,
+                        Level = WarningLevel.Info,
                     }
                 );
             }
