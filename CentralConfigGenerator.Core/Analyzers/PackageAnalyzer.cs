@@ -34,11 +34,17 @@ public class PackageAnalyzer : IPackageAnalyzer
                     var versionStr = versionAttr.Value;
 
                     // Handle version ranges and variables
-                    if (VersionRange.TryParse(versionStr, out var versionRange) && versionRange.HasLowerBound)
+                    if (
+                        VersionRange.TryParse(versionStr, out var versionRange)
+                        && versionRange.HasLowerBound
+                    )
                     {
                         var nugetVersion = versionRange.MinVersion;
-                        
-                        if (!packageVersions.ContainsKey(packageName) || nugetVersion > packageVersions[packageName])
+
+                        if (
+                            !packageVersions.ContainsKey(packageName)
+                            || nugetVersion > packageVersions[packageName]
+                        )
                         {
                             packageVersions[packageName] = nugetVersion;
                             stringVersions[packageName] = versionStr;
@@ -46,7 +52,10 @@ public class PackageAnalyzer : IPackageAnalyzer
                     }
                     else if (NuGetVersion.TryParse(versionStr, out var nugetVersion))
                     {
-                        if (!packageVersions.ContainsKey(packageName) || nugetVersion > packageVersions[packageName])
+                        if (
+                            !packageVersions.ContainsKey(packageName)
+                            || nugetVersion > packageVersions[packageName]
+                        )
                         {
                             packageVersions[packageName] = nugetVersion;
                             stringVersions[packageName] = versionStr;

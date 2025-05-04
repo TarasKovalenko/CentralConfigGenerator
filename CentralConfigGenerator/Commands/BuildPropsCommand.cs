@@ -17,13 +17,18 @@ public class BuildPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        MsgLogger.LogInformation("Generating Directory.Build.props for directory: {0}", directory.FullName);
+        MsgLogger.LogInformation(
+            "Generating Directory.Build.props for directory: {0}",
+            directory.FullName
+        );
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Build.props");
 
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            MsgLogger.LogWarning("File Directory.Build.props already exists. Use --overwrite to replace it.");
+            MsgLogger.LogWarning(
+                "File Directory.Build.props already exists. Use --overwrite to replace it."
+            );
             return;
         }
 
@@ -67,7 +72,7 @@ public class BuildPropsCommand(
                 {
                     // Find all property elements with the specified name
                     var propertyElements = xDoc.Descendants(property).ToList();
-                    
+
                     foreach (var element in propertyElements)
                     {
                         element.Remove();

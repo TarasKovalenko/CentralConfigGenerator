@@ -14,10 +14,16 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
     public VersionCompatibilityChecker()
     {
         var providers = new List<Lazy<INuGetResourceProvider>>(Repository.Provider.GetCoreV3());
-        _repository = new SourceRepository(new PackageSource("https://api.nuget.org/v3/index.json"), providers);
+        _repository = new SourceRepository(
+            new PackageSource("https://api.nuget.org/v3/index.json"),
+            providers
+        );
     }
 
-    public async Task<CompatibilityCheckResult> CheckCompatibilityAsync(string packageId, string version)
+    public async Task<CompatibilityCheckResult> CheckCompatibilityAsync(
+        string packageId,
+        string version
+    )
     {
         var result = new CompatibilityCheckResult();
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
@@ -37,7 +43,8 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
                 includeUnlisted: false,
                 new SourceCacheContext(),
                 NullLogger.Instance,
-                CancellationToken.None);
+                CancellationToken.None
+            );
 
             var allVersions = searchMetadata
                 .Select(m => m.Identity.Version)
@@ -54,14 +61,18 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
             // Check for pre-release
             if (nugetVersion.IsPrerelease)
             {
-                result.Issues.Add("Pre-release version detected. Consider using a stable release for production.");
+                result.Issues.Add(
+                    "Pre-release version detected. Consider using a stable release for production."
+                );
             }
 
             // Check outdated major version
             var latestStable = allVersions.FirstOrDefault(v => !v.IsPrerelease);
             if (latestStable != null && nugetVersion.Major < latestStable.Major - 1)
             {
-                result.Issues.Add($"This version is significantly outdated. Latest stable is {latestStable}.");
+                result.Issues.Add(
+                    $"This version is significantly outdated. Latest stable is {latestStable}."
+                );
                 result.SuggestedVersion ??= latestStable.ToNormalizedString();
             }
         }

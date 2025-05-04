@@ -9,12 +9,16 @@ public enum VersionResolutionStrategy
     Highest,
     Lowest,
     MostCommon,
-    Manual
+    Manual,
 }
 
 public class VersionConflictResolver : IVersionConflictResolver
 {
-    public string Resolve(string packageName, IEnumerable<string> versions, VersionResolutionStrategy strategy)
+    public string Resolve(
+        string packageName,
+        IEnumerable<string> versions,
+        VersionResolutionStrategy strategy
+    )
     {
         var versionList = versions.ToList();
 
@@ -34,7 +38,7 @@ public class VersionConflictResolver : IVersionConflictResolver
             {
                 Original = v,
                 Parsed = NuGetVersion.TryParse(v, out var parsed) ? parsed : null,
-                Range = VersionRange.TryParse(v, out var range) ? range : null
+                Range = VersionRange.TryParse(v, out var range) ? range : null,
             })
             .ToList();
 
@@ -44,8 +48,9 @@ public class VersionConflictResolver : IVersionConflictResolver
             VersionResolutionStrategy.Lowest => ResolveLowest(parsedVersions),
             VersionResolutionStrategy.MostCommon => ResolveMostCommon(versionList),
             VersionResolutionStrategy.Manual => throw new InvalidOperationException(
-                $"Manual resolution required for package '{packageName}'. Versions found: {string.Join(", ", versionList)}"),
-            _ => throw new ArgumentOutOfRangeException(nameof(strategy))
+                $"Manual resolution required for package '{packageName}'. Versions found: {string.Join(", ", versionList)}"
+            ),
+            _ => throw new ArgumentOutOfRangeException(nameof(strategy)),
         };
     }
 
@@ -74,10 +79,7 @@ public class VersionConflictResolver : IVersionConflictResolver
         }
 
         // Fallback to string comparison
-        return parsedVersions
-            .OrderByDescending(v => v.Original)
-            .First()
-            .Original;
+        return parsedVersions.OrderByDescending(v => v.Original).First().Original;
     }
 
     private static string ResolveLowest(List<ParsedVersion> parsedVersions)
@@ -105,10 +107,7 @@ public class VersionConflictResolver : IVersionConflictResolver
         }
 
         // Fallback to string comparison
-        return parsedVersions
-            .OrderBy(v => v.Original)
-            .First()
-            .Original;
+        return parsedVersions.OrderBy(v => v.Original).First().Original;
     }
 
     private static string ResolveMostCommon(List<string> versions)

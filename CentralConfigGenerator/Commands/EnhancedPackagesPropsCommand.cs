@@ -20,18 +20,24 @@ public class EnhancedPackagesPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite, bool verbose = false)
     {
-        AnsiConsole.Status()
-            .Start("Scanning for project files...", ctx =>
-            {
-                ctx.Spinner(Spinner.Known.Star);
-                ctx.SpinnerStyle(Style.Parse("green"));
-            });
+        AnsiConsole
+            .Status()
+            .Start(
+                "Scanning for project files...",
+                ctx =>
+                {
+                    ctx.Spinner(Spinner.Known.Star);
+                    ctx.SpinnerStyle(Style.Parse("green"));
+                }
+            );
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Packages.props");
 
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            AnsiConsole.MarkupLine("[yellow]Warning:[/] File Directory.Packages.props already exists. Use --overwrite to replace it.");
+            AnsiConsole.MarkupLine(
+                "[yellow]Warning:[/] File Directory.Packages.props already exists. Use --overwrite to replace it."
+            );
             return;
         }
 
@@ -39,20 +45,26 @@ public class EnhancedPackagesPropsCommand(
 
         if (projectFiles.Count == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Warning:[/] No .csproj files found in the directory tree.");
+            AnsiConsole.MarkupLine(
+                "[yellow]Warning:[/] No .csproj files found in the directory tree."
+            );
             return;
         }
 
         AnsiConsole.MarkupLine($"[green]Found {projectFiles.Count} project files[/]");
 
         // Analyze packages with enhanced analyzer
-        var analysisResult = await AnsiConsole.Status()
-            .StartAsync("Analyzing package versions...", ctx =>
-            {
-                ctx.Spinner(Spinner.Known.Star);
-                ctx.SpinnerStyle(Style.Parse("green"));
-                return Task.FromResult(packageAnalyzer.AnalyzePackages(projectFiles));
-            });
+        var analysisResult = await AnsiConsole
+            .Status()
+            .StartAsync(
+                "Analyzing package versions...",
+                async ctx =>
+                {
+                    ctx.Spinner(Spinner.Known.Star);
+                    ctx.SpinnerStyle(Style.Parse("green"));
+                    return await packageAnalyzer.AnalyzePackagesAsync(projectFiles);
+                }
+            );
 
         // Display analysis results
         conflictVisualizer.DisplayResults(analysisResult);
@@ -60,7 +72,11 @@ public class EnhancedPackagesPropsCommand(
         // Ask for confirmation if conflicts exist
         if (analysisResult.Conflicts.Any())
         {
-            if (!AnsiConsole.Confirm("Version conflicts were detected. Continue with resolved versions?"))
+            if (
+                !AnsiConsole.Confirm(
+                    "Version conflicts were detected. Continue with resolved versions?"
+                )
+            )
             {
                 AnsiConsole.MarkupLine("[red]Operation cancelled by user.[/]");
                 return;
@@ -68,7 +84,9 @@ public class EnhancedPackagesPropsCommand(
         }
 
         // Generate Directory.Packages.props
-        var packagesPropsContent = packagesPropsGenerator.GeneratePackagesPropsContent(analysisResult.ResolvedVersions);
+        var packagesPropsContent = packagesPropsGenerator.GeneratePackagesPropsContent(
+            analysisResult.ResolvedVersions
+        );
         await fileService.WriteAllTextAsync(targetPath, packagesPropsContent);
 
         AnsiConsole.MarkupLine($"[green]Created Directory.Packages.props at {targetPath}[/]");
@@ -77,14 +95,20 @@ public class EnhancedPackagesPropsCommand(
         var updateConfirmed = AnsiConsole.Confirm("Remove version attributes from project files?");
         if (!updateConfirmed)
         {
-            AnsiConsole.MarkupLine("[yellow]Skipping project file updates. You'll need to manually remove Version attributes.[/]");
+            AnsiConsole.MarkupLine(
+                "[yellow]Skipping project file updates. You'll need to manually remove Version attributes.[/]"
+            );
             return;
         }
 
-        await AnsiConsole.Progress()
+        await AnsiConsole
+            .Progress()
             .StartAsync(async ctx =>
             {
-                var task = ctx.AddTask("[green]Updating project files[/]", maxValue: projectFiles.Count);
+                var task = ctx.AddTask(
+                    "[green]Updating project files[/]",
+                    maxValue: projectFiles.Count
+                );
 
                 foreach (var projectFile in projectFiles)
                 {
@@ -116,9 +140,11 @@ public class EnhancedPackagesPropsCommand(
                     }
                     catch (Exception ex)
                     {
-                        AnsiConsole.MarkupLine($"[red]Error updating {projectFile.Path}: {ex.Message}[/]");
+                        AnsiConsole.MarkupLine(
+                            $"[red]Error updating {projectFile.Path}: {ex.Message}[/]"
+                        );
                     }
-                    
+
                     task.Increment(1);
                 }
             });

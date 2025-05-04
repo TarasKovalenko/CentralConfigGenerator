@@ -17,14 +17,18 @@ public class PackagesPropsCommand(
 {
     public async Task ExecuteAsync(DirectoryInfo directory, bool overwrite)
     {
-        MsgLogger.LogInformation("Generating Directory.Packages.props for directory: {0}",
-            directory.FullName);
+        MsgLogger.LogInformation(
+            "Generating Directory.Packages.props for directory: {0}",
+            directory.FullName
+        );
 
         var targetPath = Path.Combine(directory.FullName, "Directory.Packages.props");
 
         if (fileService.Exists(targetPath) && !overwrite)
         {
-            MsgLogger.LogWarning("File Directory.Packages.props already exists. Use --overwrite to replace it.");
+            MsgLogger.LogWarning(
+                "File Directory.Packages.props already exists. Use --overwrite to replace it."
+            );
             return;
         }
 
@@ -46,7 +50,9 @@ public class PackagesPropsCommand(
             MsgLogger.LogDebug("Package: {0} = {1}", package.Key, package.Value);
         }
 
-        var packagesPropsContent = packagesPropsGenerator.GeneratePackagesPropsContent(packageVersions);
+        var packagesPropsContent = packagesPropsGenerator.GeneratePackagesPropsContent(
+            packageVersions
+        );
 
         await fileService.WriteAllTextAsync(targetPath, packagesPropsContent);
 
@@ -76,14 +82,19 @@ public class PackagesPropsCommand(
                 if (changed)
                 {
                     await fileService.WriteAllTextAsync(projectFile.Path, xDoc.ToString());
-                    MsgLogger.LogInformation("Updated package references in project file: {0}",
-                        projectFile.Path);
+                    MsgLogger.LogInformation(
+                        "Updated package references in project file: {0}",
+                        projectFile.Path
+                    );
                 }
             }
             catch (Exception ex)
             {
-                MsgLogger.LogError(ex, "Error updating package references in project file: {0}",
-                    projectFile.Path);
+                MsgLogger.LogError(
+                    ex,
+                    "Error updating package references in project file: {0}",
+                    projectFile.Path
+                );
             }
         }
     }

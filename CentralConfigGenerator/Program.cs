@@ -20,13 +20,19 @@ public class Program
 
         var rootCommand = new RootCommand
         {
-            Description = "A tool to generate centralized configuration files for .NET projects"
+            Description = "A tool to generate centralized configuration files for .NET projects",
         };
 
         var buildCommand = new Command("build", "Generate Directory.Build.props file");
         var packagesCommand = new Command("packages", "Generate Directory.Packages.props file");
-        var packagesEnhancedCommand = new Command("packages-enhanced", "Generate Directory.Packages.props file with enhanced version analysis");
-        var allCommand = new Command("all", "Generate both Directory.Build.props and Directory.Packages.props files");
+        var packagesEnhancedCommand = new Command(
+            "packages-enhanced",
+            "Generate Directory.Packages.props file with enhanced version analysis"
+        );
+        var allCommand = new Command(
+            "all",
+            "Generate both Directory.Build.props and Directory.Packages.props files"
+        );
 
         var directoryOption = new Option<DirectoryInfo>(
             ["--directory", "-d"],
@@ -62,41 +68,61 @@ public class Program
         allCommand.AddOption(overwriteOption);
         allCommand.AddOption(verboseOption);
 
-        buildCommand.SetHandler(async (directory, overwrite, _) =>
-        {
-            var command = services.GetRequiredService<BuildPropsCommand>();
-            ArgumentNullException.ThrowIfNull(command);
+        buildCommand.SetHandler(
+            async (directory, overwrite, _) =>
+            {
+                var command = services.GetRequiredService<BuildPropsCommand>();
+                ArgumentNullException.ThrowIfNull(command);
 
-            await command.ExecuteAsync(directory, overwrite);
-        }, directoryOption, overwriteOption, verboseOption);
+                await command.ExecuteAsync(directory, overwrite);
+            },
+            directoryOption,
+            overwriteOption,
+            verboseOption
+        );
 
-        packagesCommand.SetHandler(async (directory, overwrite, _) =>
-        {
-            var command = services.GetRequiredService<PackagesPropsCommand>();
-            ArgumentNullException.ThrowIfNull(command);
+        packagesCommand.SetHandler(
+            async (directory, overwrite, _) =>
+            {
+                var command = services.GetRequiredService<PackagesPropsCommand>();
+                ArgumentNullException.ThrowIfNull(command);
 
-            await command.ExecuteAsync(directory, overwrite);
-        }, directoryOption, overwriteOption, verboseOption);
+                await command.ExecuteAsync(directory, overwrite);
+            },
+            directoryOption,
+            overwriteOption,
+            verboseOption
+        );
 
-        packagesEnhancedCommand.SetHandler(async (directory, overwrite, verbose) =>
-        {
-            var command = services.GetRequiredService<EnhancedPackagesPropsCommand>();
-            ArgumentNullException.ThrowIfNull(command);
+        packagesEnhancedCommand.SetHandler(
+            async (directory, overwrite, verbose) =>
+            {
+                var command = services.GetRequiredService<EnhancedPackagesPropsCommand>();
+                ArgumentNullException.ThrowIfNull(command);
 
-            await command.ExecuteAsync(directory, overwrite, verbose);
-        }, directoryOption, overwriteOption, verboseOption);
+                await command.ExecuteAsync(directory, overwrite, verbose);
+            },
+            directoryOption,
+            overwriteOption,
+            verboseOption
+        );
 
-        allCommand.SetHandler(async (directory, overwrite, _) =>
-        {
-            var buildPropsCommand = services.GetRequiredService<BuildPropsCommand>();
-            ArgumentNullException.ThrowIfNull(buildPropsCommand);
+        allCommand.SetHandler(
+            async (directory, overwrite, _) =>
+            {
+                var buildPropsCommand = services.GetRequiredService<BuildPropsCommand>();
+                ArgumentNullException.ThrowIfNull(buildPropsCommand);
 
-            var packagesPropsCommand = services.GetRequiredService<PackagesPropsCommand>();
-            ArgumentNullException.ThrowIfNull(packagesPropsCommand);
+                var packagesPropsCommand = services.GetRequiredService<PackagesPropsCommand>();
+                ArgumentNullException.ThrowIfNull(packagesPropsCommand);
 
-            await buildPropsCommand.ExecuteAsync(directory, overwrite);
-            await packagesPropsCommand.ExecuteAsync(directory, overwrite);
-        }, directoryOption, overwriteOption, verboseOption);
+                await buildPropsCommand.ExecuteAsync(directory, overwrite);
+                await packagesPropsCommand.ExecuteAsync(directory, overwrite);
+            },
+            directoryOption,
+            overwriteOption,
+            verboseOption
+        );
 
         rootCommand.AddCommand(buildCommand);
         rootCommand.AddCommand(packagesCommand);

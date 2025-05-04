@@ -33,15 +33,21 @@ public enum WarningLevel
 {
     Info,
     Warning,
-    Error
+    Error,
 }
 
-public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) : IEnhancedPackageAnalyzer
+public class EnhancedPackageAnalyzer(
+    IVersionConflictResolver conflictResolver,
+    IVersionCompatibilityChecker compatibilityChecker
+) : IEnhancedPackageAnalyzer
 {
-    public PackageAnalysisResult AnalyzePackages(IEnumerable<ProjectFile> projectFiles)
+    public async Task<PackageAnalysisResult> AnalyzePackagesAsync(
+        IEnumerable<ProjectFile> projectFiles
+    )
     {
         var result = new PackageAnalysisResult();
-        var packageVersionsByPackage = new Dictionary<string, List<(string ProjectPath, string Version)>>();
+        var packageVersionsByPackage =
+            new Dictionary<string, List<(string ProjectPath, string Version)>>();
 
         // Collect all versions
         foreach (var projectFile in projectFiles)
@@ -60,21 +66,23 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
                         continue;
 
                     var version = versionAttr.Value;
-                    
+
                     if (!packageVersionsByPackage.ContainsKey(packageName))
                         packageVersionsByPackage[packageName] = new List<(string, string)>();
-                    
+
                     packageVersionsByPackage[packageName].Add((projectFile.Path, version));
                 }
             }
             catch (Exception ex)
             {
-                result.Warnings.Add(new VersionWarning
-                {
-                    PackageName = projectFile.Path,
-                    Message = $"Failed to parse project file: {ex.Message}",
-                    Level = WarningLevel.Error
-                });
+                result.Warnings.Add(
+                    new VersionWarning
+                    {
+                        PackageName = projectFile.Path,
+                        Message = $"Failed to parse project file: {ex.Message}",
+                        Level = WarningLevel.Error,
+                    }
+                );
             }
         }
 
@@ -101,35 +109,63 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
                 try
                 {
                     var resolvedVersion = conflictResolver.Resolve(
-                        packageName, 
-                        uniqueVersions, 
-                        VersionResolutionStrategy.Highest);
-                    
+                        packageName,
+                        uniqueVersions,
+                        VersionResolutionStrategy.Highest
+                    );
+
                     result.ResolvedVersions[packageName] = resolvedVersion;
-                    
-                    result.Warnings.Add(new VersionWarning
-                    {
-                        PackageName = packageName,
-                        Message = $"Multiple versions found. Resolved to: {resolvedVersion}",
-                        Level = WarningLevel.Warning
-                    });
+
+                    result.Warnings.Add(
+                        new VersionWarning
+                        {
+                            PackageName = packageName,
+                            Message = $"Multiple versions found. Resolved to: {resolvedVersion}",
+                            Level = WarningLevel.Warning,
+                        }
+                    );
                 }
                 catch (Exception ex)
                 {
-                    result.Warnings.Add(new VersionWarning
-                    {
-                        PackageName = packageName,
-                        Message = $"Failed to resolve version conflict: {ex.Message}",
-                        Level = WarningLevel.Error
-                    });
-                    
+                    result.Warnings.Add(
+                        new VersionWarning
+                        {
+                            PackageName = packageName,
+                            Message = $"Failed to resolve version conflict: {ex.Message}",
+                            Level = WarningLevel.Error,
+                        }
+                    );
+
                     // Fallback: use most recent version
                     result.ResolvedVersions[packageName] = uniqueVersions.OrderDescending().First();
                 }
             }
 
             // Check for pre-release usage
-            CheckForPrereleaseUsage(packageName, result.ResolvedVersions[packageName], result.Warnings);
+            CheckForPrereleaseUsage(
+                packageName,
+                result.ResolvedVersions[packageName],
+                result.Warnings
+            );
+
+            // Check compatibility
+            var compatibilityResult = await compatibilityChecker.CheckCompatibilityAsync(
+                packageName,
+                result.ResolvedVersions[packageName]
+            );
+
+            if (compatibilityResult.SuggestedVersion != null)
+            {
+                result.Warnings.Add(
+                    new VersionWarning
+                    {
+                        PackageName = packageName,
+                        Message =
+                            $"Consider upgrading to version {compatibilityResult.SuggestedVersion} for better compatibility.",
+                        Level = WarningLevel.Warning,
+                    }
+                );
+            }
         }
 
         return result;
@@ -137,11 +173,7 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
 
     private static VersionConflict CreateVersionConflict(string projectPath, string version)
     {
-        var conflict = new VersionConflict
-        {
-            ProjectFile = projectPath,
-            Version = version
-        };
+        var conflict = new VersionConflict { ProjectFile = projectPath, Version = version };
 
         if (NuGetVersion.TryParse(version, out var nugetVersion))
         {
@@ -155,16 +187,22 @@ public class EnhancedPackageAnalyzer(IVersionConflictResolver conflictResolver) 
         return conflict;
     }
 
-    private static void CheckForPrereleaseUsage(string packageName, string version, List<VersionWarning> warnings)
+    private static void CheckForPrereleaseUsage(
+        string packageName,
+        string version,
+        List<VersionWarning> warnings
+    )
     {
         if (NuGetVersion.TryParse(version, out var nugetVersion) && nugetVersion.IsPrerelease)
         {
-            warnings.Add(new VersionWarning
-            {
-                PackageName = packageName,
-                Message = $"Using pre-release version: {version}",
-                Level = WarningLevel.Info
-            });
+            warnings.Add(
+                new VersionWarning
+                {
+                    PackageName = packageName,
+                    Message = $"Using pre-release version: {version}",
+                    Level = WarningLevel.Info,
+                }
+            );
         }
     }
 }

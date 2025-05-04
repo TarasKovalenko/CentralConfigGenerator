@@ -7,17 +7,14 @@ public class BuildPropsGenerator : IBuildPropsGenerator
 {
     public string GenerateBuildPropsContent(Dictionary<string, string> commonProperties)
     {
-        var xDoc = new XDocument(
-            new XElement("Project",
-                new XElement("PropertyGroup")
-            )
-        );
+        var xDoc = new XDocument(new XElement("Project", new XElement("PropertyGroup")));
 
         var propertyGroup = xDoc.Root!.Element("PropertyGroup")!;
 
         // Define the required properties we want to include
+
         var requiredPropertyNames = new[] { "TargetFramework", "ImplicitUsings", "Nullable" };
-        
+
         // Add the properties that match our required list
         foreach (var propertyName in requiredPropertyNames)
         {

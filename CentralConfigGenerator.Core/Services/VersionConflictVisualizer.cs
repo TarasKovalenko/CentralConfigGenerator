@@ -17,9 +17,11 @@ public class VersionConflictVisualizer : IVersionConflictVisualizer
         summaryTable.AddRow("Packages with Conflicts", result.Conflicts.Count.ToString());
         summaryTable.AddRow("Warnings", result.Warnings.Count.ToString());
 
-        AnsiConsole.Write(new Panel(summaryTable)
-            .Header("[bold green]Package Analysis Summary[/]")
-            .Border(BoxBorder.Rounded));
+        AnsiConsole.Write(
+            new Panel(summaryTable)
+                .Header("[bold green]Package Analysis Summary[/]")
+                .Border(BoxBorder.Rounded)
+        );
 
         AnsiConsole.WriteLine();
 
@@ -88,7 +90,7 @@ public class VersionConflictVisualizer : IVersionConflictVisualizer
                     WarningLevel.Info => "[blue]Info[/]",
                     WarningLevel.Warning => "[yellow]Warning[/]",
                     WarningLevel.Error => "[red]Error[/]",
-                    _ => "[white]Unknown[/]"
+                    _ => "[white]Unknown[/]",
                 };
 
                 warningsTable.AddRow(
