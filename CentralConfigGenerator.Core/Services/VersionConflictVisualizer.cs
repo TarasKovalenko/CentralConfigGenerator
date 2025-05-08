@@ -113,7 +113,9 @@ public class VersionConflictVisualizer : IVersionConflictVisualizer
 
         foreach (var package in result.ResolvedVersions.OrderBy(p => p.Key))
         {
-            versionTable.AddRow(package.Key, package.Value);
+            string escapedPackageName = Markup.Escape(package.Key);
+            string escapedVersion = Markup.Escape(package.Value);
+            versionTable.AddRow(escapedPackageName, escapedVersion);
         }
 
         AnsiConsole.Write(versionTable);
