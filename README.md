@@ -4,8 +4,9 @@
 [![build](https://github.com/TarasKovalenko/CentralConfigGenerator/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TarasKovalenko/CentralConfigGenerator/actions)
 [![CentralConfigGenerator NuGet current](https://img.shields.io/nuget/v/CentralConfigGenerator?label=CentralConfigGenerator)](https://www.nuget.org/packages/CentralConfigGenerator/)
 
-## Goals
-A modern .NET tool for automatically generating centralized configuration files for .NET projects. CentralConfig analyzes your solution structure and creates properly configured `Directory.Build.props` and `Directory.Packages.props` files to standardize settings across your projects.
+Migrate a .NET solution to Central Package Management, **prove the migration changed nothing**, and keep the dependencies healthy afterwards.
+
+Writing `Directory.Packages.props` is step one. The tool shows you the exact diff before touching a file, backs everything up so you can undo it, verifies that NuGet still resolves the identical package graph afterwards, audits every dependency for vulnerabilities, deprecations and licence risk, fixes what can be fixed automatically, and moves versions forward with your test suite as the safety net.
 
 ## Terms of use
 
@@ -19,265 +20,388 @@ By using this project or its source code, for any purpose and in any shape or fo
 
 To learn more about the war and how you can help, [click here](https://war.ukraine.ua/). Glory to Ukraine! 🇺🇦
 
-## Overview
+---
 
-CentralConfigGenerator helps you maintain consistent configuration across multiple .NET projects by:
-
-1. Automatically generating `Directory.Build.props` files with common project properties
-2. Automatically generating `Directory.Packages.props` files with centralized package versions
-3. Providing advanced version conflict resolution using NuGet.Versioning
-4. Offering compatibility checking and visual analysis of version conflicts
-5. Updating your project files to use these centralized configurations
-
-## Installation
+## Install
 
 ```bash
 dotnet tool install --global CentralConfigGenerator
 ```
 
-## Usage
-
-### Basic Commands
-
-CentralConfigGenerator provides four main commands:
+Requires the .NET SDK 8.0 or later. The tool ships for `net8.0`, `net9.0` and `net10.0`.
 
 ```bash
-# Generate Directory.Build.props file with common project properties
-central-config build [options]
-
-# Generate Directory.Packages.props file for centralized package versions
-central-config packages [options]
-
-# Generate Directory.Packages.props with enhanced version analysis
-central-config packages-enhanced [options]
-
-# Generate both files in one command
-central-config all [options]
+dotnet tool update --global CentralConfigGenerator   # upgrade
+central-config --version                             # verify
 ```
 
-### Command Options
-
-All commands support the following options:
-
-- `-d, --directory <PATH>`: Specify the directory to scan (defaults to current directory)
-- `-o, --overwrite`: Overwrite existing files (off by default)
-- `-v, --verbose`: Enable verbose logging
-
-### Examples
-
-#### Generate Directory.Build.props
+## 60 seconds to a migrated solution
 
 ```bash
-# Generate Directory.Build.props in the current directory
-central-config build
-
-# Generate in a specific directory and overwrite if exists
-central-config build -d C:\Projects\MySolution -o
+central-config doctor                    # is this machine and repo ready?
+central-config migrate --dry-run --diff  # exactly what would change, line by line
+central-config verify                    # migrate, then prove the package graph is identical
+central-config analyze --all-checks      # what else is wrong with these dependencies?
+central-config analyze --fix             # fix everything that can be fixed safely
 ```
 
-#### Generate Directory.Packages.props
+Nothing is written without a backup. `central-config backups restore` undoes any of it.
+
+---
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `migrate` | Move the workspace to Central Package Management. Aliases: `packages`, `convert`, `packages-enhanced`. |
+| `build` | Hoist MSBuild properties every project agrees on into `Directory.Build.props`. |
+| `all` | `migrate` plus `build` in one pass. |
+| `revert` | Undo CPM: write versions back into the project files and delete `Directory.Packages.props`. |
+| `analyze` | Score dependency health, report findings, optionally auto-fix. Alias: `check`. |
+| `update` | Update central versions, run the tests, roll back or bisect on failure. |
+| `verify` | Migrate, then diff the resolved package graph before and after. |
+| `tree` | Print the resolved dependency graph as an ASCII tree. |
+| `status` | One-shot dashboard of the workspace and the single most useful next step. |
+| `doctor` | Environment diagnostics: SDK, solution layout, feeds, config, backups. |
+| `init` | Scaffold a `.centralconfig.json`. |
+| `explain` | Document an analysis rule, or list all of them. |
+| `batch` | Run the migration across every solution in a monorepo. |
+| `backups list \| restore \| prune` | Inspect, restore and prune rollback backups. |
+| `completions` | Emit a shell completion script (bash, zsh, fish, powershell). |
+
+Every command accepts `--help`.
+
+### Scoping the run
+
+These work on every command that touches a workspace:
+
+| Option | Meaning |
+|---|---|
+| `-d, --directory <PATH>` | Directory to scan. Defaults to the current directory. |
+| `-s, --solution <PATH>` | Scope to a `.sln`, `.slnx` or `.slnf`. Only its projects are touched. |
+| `--project <PATH>` | Scope to a single project. |
+| `-x, --exclude-dirs <REGEX>` | Skip matching directories. `bin`, `obj`, `node_modules`, `.git` and the backup folder are always skipped. |
+| `-q, --quiet` / `-v, --verbose` | Less / more output. |
+| `--no-config` | Ignore any `.centralconfig.json` on disk. |
+
+C#, F# and VB projects are all discovered (`.csproj`, `.fsproj`, `.vbproj`).
+
+---
+
+## `migrate`
 
 ```bash
-# Generate Directory.Packages.props in the current directory
-central-config packages
-
-# Generate in a specific directory with verbose logging
-central-config packages -d C:\Projects\MySolution -v
+central-config migrate [options]
 ```
 
-#### Enhanced Package Analysis
+| Option | Meaning |
+|---|---|
+| `-n, --dry-run` | Plan everything, write nothing. |
+| `--diff` | Print a unified diff of every pending change. |
+| `-o, --output-dir <PATH>` | Where `Directory.Packages.props` is written. |
+| `-m, --merge` | Merge into an existing props file, preserving its comments and layout. |
+| `--overwrite` | Replace an existing props file. |
+| `-k, --keep-attrs` | Leave inline `Version` attributes in the projects. |
+| `--conflict-strategy <S>` | `Highest` (default), `Lowest`, `MostCommon` or `Fail`. |
+| `--interactive-conflicts` | Choose the version yourself, per conflict. |
+| `--min-version` | Shorthand for `--conflict-strategy Lowest`. |
+| `--ignore-prerelease` | Prefer stable versions when resolving conflicts. |
+| `-t, --transitive-pinning` | Emit `CentralPackageTransitivePinningEnabled`. |
+| `-e, --encoding <NAME>` | Write with this IANA encoding. Default: preserve each file's own. |
+| `-l, --linewrap <STYLE>` | `lf`, `crlf` or `cr`. Default: preserve. |
+| `-c, --version-comparison <S>` | `Default`, `Version`, `VersionRelease`, `VersionReleaseMetadata`. |
+| `--unify-props` | Also hoist shared properties into `Directory.Build.props`. |
+| `--no-backup`, `--backup-dir`, `--add-gitignore` | Backup behaviour. |
+| `-f, --force` | Skip confirmation prompts. |
 
-```bash
-# Use enhanced package analysis with visual conflict resolution
-central-config packages-enhanced -d C:\Projects\MySolution -v
+**Encoding and line endings are preserved by default.** A UTF-8-with-BOM, CRLF project file comes back byte-identical apart from the versions that were removed. Formatting, comments and attribute order survive too — the XML is edited surgically rather than re-serialised.
 
-# This will:
-# - Detect version conflicts across projects
-# - Show visual analysis of conflicts
-# - Suggest resolutions based on semantic versioning
-# - Check for compatibility issues
-# - Ask for confirmation before proceeding
-```
-
-## How It Works
-
-### Directory.Build.props Generation
-
-The `build` command:
-
-1. Scans all `.csproj` files in the specified directory and subdirectories
-2. Identifies common properties that appear in multiple projects
-3. Extracts these properties into a `Directory.Build.props` file
-4. Removes the extracted properties from individual project files
-
-By default, CentralConfigGenerator will focus on the following key properties:
-- `TargetFramework`
-- `ImplicitUsings`
-- `Nullable`
-
-### Directory.Packages.props Generation
-
-The `packages` command:
-
-1. Scans all `.csproj` files in the specified directory and subdirectories
-2. Extracts all package references and their versions
-3. For each package, uses the highest version found across all projects
-4. Generates a `Directory.Packages.props` file with these package versions
-5. Removes version attributes from `PackageReference` elements in project files
-
-### Enhanced Package Analysis
-
-The `packages-enhanced` command provides advanced features:
-
-1. **Semantic Version Analysis**: Uses NuGet.Versioning for accurate version comparisons
-2. **Conflict Detection**: Identifies and visualizes version conflicts across projects
-3. **Version Range Support**: Handles version ranges (e.g., `[1.0.0,2.0.0)`)
-4. **Pre-release Detection**: Warns about pre-release packages in production code
-5. **Compatibility Checking**: Identifies known issues with specific package versions
-6. **Visual Reports**: Provides clear, color-coded reports of analysis results
-7. **Multiple Resolution Strategies**: Offers different approaches to resolve conflicts:
-    - Highest version (default)
-    - Lowest version
-    - Most common version
-    - Manual resolution
-
-### Understanding the Generated Files
-
-#### Directory.Build.props
+Version specified as a child element works as well as an attribute:
 
 ```xml
-<Project>
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-</Project>
+<PackageReference Include="Serilog">
+  <Version>2.12.0</Version>
+</PackageReference>
 ```
 
-#### Directory.Packages.props
+becomes `<PackageReference Include="Serilog" />`.
 
-```xml
-<Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4" />
-    <PackageVersion Include="Spectre.Console" Version="0.50.0" />
-    <PackageVersion Include="Spectre.Console.Cli" Version="0.50.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-  </ItemGroup>
-</Project>
-```
+## `verify`
 
-## Enhanced Features
-
-### Version Conflict Resolution
-
-When multiple projects reference the same package with different versions, the enhanced analyzer:
-
-1. Detects all version conflicts
-2. Shows a detailed conflict report
-3. Applies resolution strategy (highest version by default)
-4. Asks for confirmation before proceeding
-
-Example output:
-```
-Package Analysis Summary
-┌─────────────────────────┬─────────┐
-│ Metric                  │  Value  │
-├─────────────────────────┼─────────┤
-│ Total Packages          │    12   │
-│ Packages with Conflicts │    3    │
-│ Warnings                │    5    │
-└─────────────────────────┴─────────┘
-
-Version Conflicts Detected:
-┌─────────────────────┬──────────────────┬─────────────┬─────────────┐
-│ Package             │ Project          │ Version     │ Type        │
-├─────────────────────┼──────────────────┼─────────────┼─────────────┤
-│ Newtonsoft.Json     │ Project1.csproj  │ 11.0.2      │ Release     │
-│ Newtonsoft.Json     │ Project2.csproj  │ 13.0.3      │ Release     │
-└─────────────────────┴──────────────────┴─────────────┴─────────────┘
-```
-
-### Semantic Versioning Support
-
-The enhanced analyzer properly handles:
-
-- Pre-release versions (e.g., `1.0.0-beta.1`)
-- Build metadata (e.g., `1.0.0+build.123`)
-- Version ranges (e.g., `[1.0.0,2.0.0)`)
-- Floating versions (e.g., `1.0.*`)
-
-### Compatibility Warnings
-
-The tool can warn about:
-
-- Known security vulnerabilities in specific versions
-- Performance issues in certain package versions
-- Significantly outdated packages
-- Pre-release packages in production code
-
-## Benefits
-
-- **Consistent Configuration**: Ensure all projects use the same framework versions, language features, and code quality settings
-- **Simplified Updates**: Update package versions or project settings in a single location
-- **Reduced Duplication**: Remove redundant configuration from individual project files
-- **Improved Maintainability**: Make your solution more maintainable by centralizing common settings
-- **Version Conflict Resolution**: Automatically detect and resolve package version conflicts
-- **Better Version Management**: Use semantic versioning for accurate version comparisons
-- **Visual Analysis**: See clear, color-coded reports of package analysis results
-
-## Common Scenarios
-
-### Migrating Existing Solutions
-
-For existing solutions with many projects, use CentralConfigGenerator to centralize configuration:
+A migration is only correct if NuGet still resolves the *same* packages afterwards. `verify` proves it:
 
 ```bash
-# Navigate to the solution root
-cd MySolution
-
-# Generate both configuration files with verbose output
-central-config all -v
+central-config verify -s MySolution.sln
 ```
 
-### Resolving Version Conflicts
+1. Restores and snapshots the full resolved graph, transitive packages included.
+2. Applies the migration.
+3. Restores and snapshots again.
+4. Diffs the two graphs.
 
-When you have multiple projects with conflicting package versions:
+If any package resolves to a different version, the run reports the drift and rolls the migration back. `--strict` also fails on pure additions (which are normal when transitive pinning is switched on). `--keep` keeps the migration in place and just reports. Exit code `9` means drift was found.
+
+## `analyze`
 
 ```bash
-# Use enhanced package analysis to detect and resolve conflicts
-central-config packages-enhanced -v
-
-# The tool will:
-# 1. Show all version conflicts
-# 2. Propose resolutions
-# 3. Ask for confirmation
-# 4. Update all project files
+central-config analyze [--audit] [--outdated] [--deprecated] [--licenses] [--transitive]
+central-config analyze --all-checks            # all of the above
+central-config analyze --fix                   # apply every auto-fixable finding
+central-config analyze --fix-dry-run           # show what --fix would do
 ```
 
-## Limitations
+Offline rules always run. The four flags above add feed lookups; `--transitive` resolves the real graph through `dotnet list package`.
 
-- Projects with highly customized or conflicting settings may require manual adjustment after running CentralConfigGenerator
-- For properties to be included in Directory.Build.props, they must appear with identical values in most projects
-- Version conflicts in packages will be resolved by selecting the highest version found (configurable in enhanced mode)
-- Some version formats (like variables) cannot be automatically resolved
+| Option | Meaning |
+|---|---|
+| `--fail-on <SEVERITY>` | Exit non-zero at or above this level. `Info` (default) … `Critical`, or `Never`. |
+| `--rules <Rule=Severity>` | Re-grade a rule, or disable it with `Rule=none`. Repeatable. |
+| `--baseline <PATH>` | Suppress findings recorded in a baseline. |
+| `--write-baseline` | Record today's findings as accepted, so CI gates only on new ones. |
+| `--ignore <PACKAGE>` | Skip a package entirely. Trailing `*` matches a prefix. Repeatable. |
+| `--output <FORMAT>` | `Terminal` (default), `Json`, `Sarif`, `Markdown`, `Csv`. |
+| `--output-file <PATH>` | Write the report to a file instead of stdout. |
+| `--max-parallelism <N>` | Concurrent feed queries. Default 8. |
 
-## Local installation
+Every workspace gets a **health score out of 100** and a letter grade, weighted by severity and normalised against workspace size so a large solution is not punished twice for being large.
 
-To install the tool locally for development or testing, clone the repository and run:
+### Rules
+
+Run `central-config explain all` for the live list, or `central-config explain <RuleId>` for the reasoning behind one.
+
+| Rule | Default | Needs feed | Auto-fix |
+|---|---|---|---|
+| `SecurityVulnerability` | Critical | yes | yes |
+| `MissingCentralVersion` | Critical | – | yes |
+| `InlineVersionUnderCpm` | High | – | yes |
+| `DeprecatedPackage` | High | yes | – |
+| `UnpinnedTransitiveDependency` | High | yes | yes |
+| `LicenseRisk` | Moderate | yes | – |
+| `VersionInconsistency` | Moderate | – | yes |
+| `TransitiveConflict` | Moderate | – | yes |
+| `FloatingVersion` | Moderate | – | – |
+| `RedundantReference` | Moderate | – | yes |
+| `DuplicatePackageCasing` | Low | – | yes |
+| `OutdatedPackage` | Low | yes | yes |
+| `PrereleaseInProduction` | Low | – | yes |
+| `FrameworkAlignment` | Low | – | – |
+| `OrphanedPackageVersion` | Info | – | yes |
+| `PropertyDrift` | Info | – | – |
+
+Auto-fixes are planned in memory first, applied as one batch, and always backed up.
+
+## `update`
 
 ```bash
-dotnet tool install --global --add-source .\CentralConfigGenerator\nupkg\ CentralConfigGenerator
+central-config update --dry-run          # what is available
+central-config update                    # update all, test, roll everything back on failure
+central-config update --bisect           # keep the largest subset that still passes
+central-config update --only Serilog,Polly
 ```
+
+`--bisect` is the interesting one. When the full update set fails the tests, it splits the set, tests the halves, recurses, and keeps the largest combination that still goes green — then tells you exactly which packages it held back so you can look at them individually. `--bisect-budget` caps how many restore+test cycles it will spend (default 16), and `--bisect-test-filter` is passed straight to `dotnet test --filter`.
+
+## `build`
+
+Hoists MSBuild properties into `Directory.Build.props` — but only properties that **every project declaring them agrees on**, and never project-identity properties like `AssemblyName` or `RootNamespace`. Requiring unanimity is what makes the hoist behaviour-preserving. Conditioned `PropertyGroup`s are left alone.
+
+```bash
+central-config build --dry-run --diff
+central-config build --property TargetFramework --property LangVersion
+central-config build --keep-in-projects      # write the file, do not edit the projects
+```
+
+## Backups and rollback
+
+Every mutating command copies the files it is about to touch into `.centralconfig-backups/<timestamp>/` with a manifest, before writing anything.
+
+```bash
+central-config backups list
+central-config backups restore                # most recent
+central-config backups restore 20250824-101500
+central-config backups prune --retention 5
+central-config backups prune --all
+```
+
+Files the operation *created* are recorded too, so a restore deletes them rather than leaving them behind. Pass `--add-gitignore` on any mutating command to keep the backup folder out of git.
+
+---
+
+## Configuration file
+
+```bash
+central-config init
+```
+
+writes a `.centralconfig.json`, discovered by walking up from the working directory the way `global.json` is. The command line always wins over the file.
+
+```jsonc
+{
+  "$schema": "https://raw.githubusercontent.com/TarasKovalenko/CentralConfigGenerator/main/schemas/centralconfig.schema.json",
+  "conflictStrategy": "Highest",
+  "backup": true,
+  "addGitignore": true,
+  "failOn": "High",
+  "transitivePinning": false,
+  "ignorePrerelease": false,
+  "excludeDirs": "^(samples|benchmarks)$",
+  "retention": { "enabled": true, "maxBackups": 5 },
+  "rules": {
+    "OutdatedPackage": "Low",
+    "PropertyDrift": "none"
+  },
+  "ignorePackages": ["Internal.*"],
+  "buildProperties": ["TargetFramework", "ImplicitUsings", "Nullable", "LangVersion"]
+}
+```
+
+---
+
+## Exit codes
+
+| Code | Name | Meaning |
+|---|---|---|
+| 0 | Success | Done. |
+| 1 | ValidationError | Bad arguments, or a file already exists without `--overwrite`. |
+| 2 | FileOperationError | I/O or permission failure. |
+| 3 | VersionConflict | Unresolvable conflict under `--conflict-strategy Fail`. |
+| 4 | NoProjectsFound | Nothing to work on. |
+| 5 | AnalysisIssuesFound | Findings at or above `--fail-on`. |
+| 6 | UnexpectedError | Unhandled exception. |
+| 7 | TestFailure | Tests failed during `update`; changes were rolled back. |
+| 8 | IncompleteAnalysis | The scan could not finish — treat as "re-run", not "clean". |
+| 9 | GraphDrift | `verify` found the package graph changed. |
+
+---
+
+## CI recipes
+
+**Gate a PR on security findings, annotated inline:**
+
+```yaml
+- run: dotnet tool install --global CentralConfigGenerator
+- run: |
+    central-config analyze --audit --deprecated \
+      --output Sarif --output-file report.sarif \
+      --fail-on High --quiet
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: report.sarif
+```
+
+**Put the report in the job summary:**
+
+```yaml
+- run: central-config analyze --all-checks --output Markdown --fail-on Never --quiet >> "$GITHUB_STEP_SUMMARY"
+```
+
+**Adopt gradually with a baseline:**
+
+```bash
+central-config analyze --all-checks --write-baseline   # accept today's debt
+central-config analyze --all-checks --baseline .centralconfig-baseline.json --fail-on Moderate
+```
+
+Only *new* findings fail the build.
+
+**Monorepo:**
+
+```bash
+central-config batch ./repos --parallel --continue --dry-run
+```
+
+---
+
+## What you get
+
+**Migration**
+
+- `Directory.Packages.props` generated or merged into, `Directory.Build.props` generated from properties every project agrees on, and a `revert` that puts everything back.
+- C#, F# and VB projects; `.sln`, `.slnx` and `.slnf` scoping; regex directory exclusion.
+- Encoding, BOM, line endings, comments, indentation and attribute order preserved by default — or normalised on demand with `--encoding` and `--linewrap`.
+- Versions declared as attributes or as child elements, plus `GlobalPackageReference` and `VersionOverride`.
+- Conflict strategies: `Highest`, `Lowest`, `MostCommon`, `Fail`, or decide each one yourself.
+- Transitive pinning, pre-release filtering, and a configurable version-comparison scope.
+
+**Safety**
+
+- Dry-run with real unified diffs, planned in memory so the preview and the write are the same code path.
+- A timestamped backup before every write, with `restore`, retention and pruning — including deleting files the operation created.
+- `verify`: migrate, then diff the resolved package graph before and after, and roll back automatically if anything moved.
+
+**Analysis**
+
+- 16 rules covering vulnerabilities, deprecation, licence risk, version drift, floating versions, transitive conflicts, duplicate and orphaned entries, framework and property drift.
+- A 0–100 health score and letter grade, weighted by severity and normalised for workspace size.
+- Per-rule severity overrides, package ignores, and baselines so CI gates only on new findings.
+- Auto-fix for everything that can be fixed mechanically, batched and backed up.
+
+**Maintenance**
+
+- `update` moves central versions forward, runs the tests, and rolls back on failure — or bisects for the largest subset that still passes and names what it held back.
+- `tree` for the resolved graph, `status` for a dashboard, `doctor` for environment diagnostics, `batch` for monorepos.
+
+**Fits into CI**
+
+- Terminal, JSON, SARIF 2.1.0, Markdown and CSV reports, to stdout or a file.
+- Stable exit codes 0–9 so scripts can branch on the outcome.
+- Private feeds through `nuget.config`; shell completions for bash, zsh, fish and PowerShell.
+- Ships for `net8.0`, `net9.0` and `net10.0`.
+
+---
+
+## Safety model
+
+- **Nothing is written during planning.** Dry-run, diff and apply all run the same planner; only the final step touches disk.
+- **Backups first.** Every mutating command backs up before writing, including files it is about to create.
+- **Unanimity for property hoisting.** A property moves up only when every project that declares it uses the same value.
+- **Conditioned groups are untouched.** Per-configuration and per-framework `PropertyGroup`s never get hoisted or stripped.
+- **Verification is a graph diff, not a file diff.** `verify` compares what NuGet actually resolves.
+- **Incomplete is not clean.** If the feed was unreachable, the report says so and `analyze` exits `8` rather than pretending the workspace is healthy.
+
+---
+
+## Using the library
+
+`CentralConfigGenerator.Core` is a normal library if you want to build on it:
+
+```csharp
+IFileSystem fileSystem = new PhysicalFileSystem();
+var discovery = new ProjectDiscoveryService(fileSystem);
+
+var migration = new MigrationService(
+    discovery,
+    fileSystem,
+    new BackupService(fileSystem),
+    new VersionSelector(new VersionConflictResolver()));
+
+var plan = await migration.PlanAsync(new MigrationOptions { RootDirectory = "." });
+
+foreach (var change in plan.Changes)
+{
+    Console.WriteLine(change.Diff());
+}
+
+await migration.ApplyAsync(plan, new MigrationOptions { RootDirectory = "." });
+```
+
+Key types: `MigrationService`, `AnalysisEngine`, `AutoFixService`, `VerificationService`, `PackageUpdateService`, `BackupService`, `ProjectDiscoveryService`, `NuGetFeedService`.
+
+## Further reading
+
+- [Migration playbook](docs/migration-playbook.md) — the full route from inline versions to a CI-gated workspace.
+- [Architecture](docs/architecture.md) — how the pieces fit, and how to add a rule or a command.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Building the repository needs the .NET 10 SDK — it compiles all three target frameworks, so it is the only one you have to install.
+
+```bash
+dotnet build
+dotnet test
+```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT — see [LICENSE](LICENSE).
