@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TarasKovalenko/CentralConfigGenerator/main/schemas/centralconfig.schema.json",
+  "conflictStrategy": "Highest",
+  "backup": true,
+  "addGitignore": true,
+  "failOn": "High",
+  "retention": { "enabled": true, "maxBackups": 5 },
+  "rules": {
+    "OutdatedPackage": "Low",
+    "PropertyDrift": "none"
+  },
+  "buildProperties": [
+    "ImplicitUsings",
+    "Nullable",
+    "LangVersion",
+    "InvariantGlobalization"
+  ]
+}
