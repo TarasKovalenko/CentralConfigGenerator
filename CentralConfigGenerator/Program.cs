@@ -1,162 +1,253 @@
-using System.CommandLine;
+using CentralConfigGenerator.Cli.Commands;
+using CentralConfigGenerator.Cli.Infrastructure;
 using CentralConfigGenerator.Commands;
+using CentralConfigGenerator.Core.Analysis;
 using CentralConfigGenerator.Core.Analyzers;
 using CentralConfigGenerator.Core.Analyzers.Abstractions;
+using CentralConfigGenerator.Core.Configuration;
+using CentralConfigGenerator.Core.Discovery;
 using CentralConfigGenerator.Core.Generators;
 using CentralConfigGenerator.Core.Generators.Abstractions;
+using CentralConfigGenerator.Core.IO;
+using CentralConfigGenerator.Core.Migration;
+using CentralConfigGenerator.Core.Models;
+using CentralConfigGenerator.Core.NuGet;
 using CentralConfigGenerator.Core.Services;
 using CentralConfigGenerator.Core.Services.Abstractions;
+using CentralConfigGenerator.Core.Workspace;
 using CentralConfigGenerator.Services;
 using CentralConfigGenerator.Services.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
+using Spectre.Console.Cli;
 
 namespace CentralConfigGenerator;
 
 public class Program
 {
-    static async Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
-        var services = ConfigureServices();
+        var app = new CommandApp(new TypeRegistrar(BuildServiceCollection()));
 
-        var rootCommand = new RootCommand
+        app.Configure(config =>
         {
-            Description = "A tool to generate centralized configuration files for .NET projects",
-        };
+            config.SetApplicationName("central-config");
+            config.SetApplicationVersion(ToolVersion);
+            config.UseStrictParsing();
+            config.CaseSensitivity(CaseSensitivity.None);
 
-        var buildCommand = new Command("build", "Generate Directory.Build.props file");
-        var packagesCommand = new Command("packages", "Generate Directory.Packages.props file");
-        var packagesEnhancedCommand = new Command(
-            "packages-enhanced",
-            "Generate Directory.Packages.props file with enhanced version analysis"
-        );
-        var allCommand = new Command(
-            "all",
-            "Generate both Directory.Build.props and Directory.Packages.props files"
-        );
+            config
+                .AddCommand<Cli.Commands.MigrateCommand>("migrate")
+                .WithAlias("packages")
+                .WithAlias("convert")
+                .WithAlias("packages-enhanced")
+                .WithDescription("Migrate the workspace to central package management.")
+                .WithExample("migrate", "--dry-run", "--diff")
+                .WithExample("migrate", "-s", "MySolution.sln", "--transitive-pinning")
+                .WithExample("migrate", "--merge", "--conflict-strategy", "Lowest");
 
-        var directoryOption = new Option<DirectoryInfo>(
-            ["--directory", "-d"],
-            () => new DirectoryInfo(Directory.GetCurrentDirectory()),
-            "The directory to scan for .NET projects"
-        );
+            config
+                .AddCommand<Cli.Commands.BuildPropsCommand>("build")
+                .WithDescription("Hoist shared MSBuild properties into Directory.Build.props.")
+                .WithExample("build", "--dry-run", "--diff");
 
-        var overwriteOption = new Option<bool>(
-            ["--overwrite", "-o"],
-            () => false,
-            "Overwrite existing files"
-        );
+            config
+                .AddCommand<AllCommand>("all")
+                .WithDescription("Generate Directory.Build.props and Directory.Packages.props together.")
+                .WithExample("all", "--dry-run");
 
-        var verboseOption = new Option<bool>(
-            ["--verbose", "-v"],
-            () => false,
-            "Enable verbose logging"
-        );
+            config
+                .AddCommand<RevertCommand>("revert")
+                .WithDescription("Undo central package management, inlining versions again.")
+                .WithExample("revert", "--dry-run", "--diff");
 
-        buildCommand.AddOption(directoryOption);
-        buildCommand.AddOption(overwriteOption);
-        buildCommand.AddOption(verboseOption);
+            config
+                .AddCommand<AnalyzeCommand>("analyze")
+                .WithAlias("check")
+                .WithDescription("Score dependency health and report every problem found.")
+                .WithExample("analyze", "--all-checks")
+                .WithExample("analyze", "--audit", "--output", "Sarif", "--output-file", "report.sarif")
+                .WithExample("analyze", "--fix");
 
-        packagesCommand.AddOption(directoryOption);
-        packagesCommand.AddOption(overwriteOption);
-        packagesCommand.AddOption(verboseOption);
+            config
+                .AddCommand<UpdateCommand>("update")
+                .WithDescription("Update central versions, run the tests, roll back on failure.")
+                .WithExample("update", "--dry-run")
+                .WithExample("update", "--bisect");
 
-        packagesEnhancedCommand.AddOption(directoryOption);
-        packagesEnhancedCommand.AddOption(overwriteOption);
-        packagesEnhancedCommand.AddOption(verboseOption);
+            config
+                .AddCommand<VerifyCommand>("verify")
+                .WithDescription("Migrate, then prove the resolved package graph did not change.")
+                .WithExample("verify", "-s", "MySolution.sln");
 
-        allCommand.AddOption(directoryOption);
-        allCommand.AddOption(overwriteOption);
-        allCommand.AddOption(verboseOption);
+            config
+                .AddCommand<TreeCommand>("tree")
+                .WithDescription("Print the resolved dependency graph.")
+                .WithExample("tree", "--transitive");
 
-        buildCommand.SetHandler(
-            async (directory, overwrite, _) =>
-            {
-                var command = services.GetRequiredService<BuildPropsCommand>();
-                ArgumentNullException.ThrowIfNull(command);
+            config
+                .AddCommand<StatusCommand>("status")
+                .WithDescription("One-shot dashboard of the workspace and what to do next.");
 
-                await command.ExecuteAsync(directory, overwrite);
-            },
-            directoryOption,
-            overwriteOption,
-            verboseOption
-        );
+            config
+                .AddCommand<DoctorCommand>("doctor")
+                .WithDescription("Diagnose the environment before anything else goes wrong.");
 
-        packagesCommand.SetHandler(
-            async (directory, overwrite, _) =>
-            {
-                var command = services.GetRequiredService<PackagesPropsCommand>();
-                ArgumentNullException.ThrowIfNull(command);
+            config
+                .AddCommand<InitCommand>("init")
+                .WithDescription("Scaffold a .centralconfig.json.");
 
-                await command.ExecuteAsync(directory, overwrite);
-            },
-            directoryOption,
-            overwriteOption,
-            verboseOption
-        );
+            config
+                .AddCommand<ExplainCommand>("explain")
+                .WithDescription("Explain an analysis rule, or list them all.")
+                .WithExample("explain", "all")
+                .WithExample("explain", "SecurityVulnerability");
 
-        packagesEnhancedCommand.SetHandler(
-            async (directory, overwrite, verbose) =>
-            {
-                var command = services.GetRequiredService<EnhancedPackagesPropsCommand>();
-                ArgumentNullException.ThrowIfNull(command);
+            config
+                .AddCommand<BatchCommand>("batch")
+                .WithDescription("Run the migration across every solution in a monorepo.")
+                .WithExample("batch", "./repos", "--parallel", "--continue");
 
-                await command.ExecuteAsync(directory, overwrite, verbose);
-            },
-            directoryOption,
-            overwriteOption,
-            verboseOption
-        );
+            config.AddBranch(
+                "backups",
+                branch =>
+                {
+                    branch.SetDescription("Inspect, restore and prune rollback backups.");
+                    branch.AddCommand<BackupListCommand>("list").WithDescription("List every backup.");
+                    branch
+                        .AddCommand<BackupRestoreCommand>("restore")
+                        .WithDescription("Restore a backup, undoing the change that created it.");
+                    branch.AddCommand<BackupPruneCommand>("prune").WithDescription("Delete old backups.");
+                }
+            );
 
-        allCommand.SetHandler(
-            async (directory, overwrite, _) =>
-            {
-                var buildPropsCommand = services.GetRequiredService<BuildPropsCommand>();
-                ArgumentNullException.ThrowIfNull(buildPropsCommand);
+            config
+                .AddCommand<CompletionsCommand>("completions")
+                .WithDescription("Emit a shell completion script (bash, zsh, fish, powershell).");
 
-                var packagesPropsCommand = services.GetRequiredService<PackagesPropsCommand>();
-                ArgumentNullException.ThrowIfNull(packagesPropsCommand);
+            config.SetExceptionHandler(
+                (exception, _) =>
+                {
+                    if (exception is CommandParseException or CommandRuntimeException)
+                    {
+                        AnsiConsole.MarkupLine($"[red]✗[/] {Markup.Escape(exception.Message)}");
+                        AnsiConsole.MarkupLine("[grey]Run with --help to see the available options.[/]");
+                        return ExitCode.ValidationError;
+                    }
 
-                await buildPropsCommand.ExecuteAsync(directory, overwrite);
-                await packagesPropsCommand.ExecuteAsync(directory, overwrite);
-            },
-            directoryOption,
-            overwriteOption,
-            verboseOption
-        );
+                    if (exception is VersionConflictException conflict)
+                    {
+                        AnsiConsole.MarkupLine($"[red]✗[/] {Markup.Escape(conflict.Message)}");
+                        return ExitCode.VersionConflict;
+                    }
 
-        rootCommand.AddCommand(buildCommand);
-        rootCommand.AddCommand(packagesCommand);
-        rootCommand.AddCommand(packagesEnhancedCommand);
-        rootCommand.AddCommand(allCommand);
+                    if (exception is UnauthorizedAccessException or IOException)
+                    {
+                        AnsiConsole.MarkupLine($"[red]✗[/] {Markup.Escape(exception.Message)}");
+                        return ExitCode.FileOperationError;
+                    }
 
-        return await rootCommand.InvokeAsync(args);
+                    AnsiConsole.MarkupLine($"[red]✗ Unexpected error:[/] {Markup.Escape(exception.Message)}");
+
+                    if (Ui.Verbose)
+                    {
+                        AnsiConsole.WriteException(exception, ExceptionFormats.ShortenEverything);
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[grey]Re-run with --verbose for the full stack trace.[/]");
+                    }
+
+                    return ExitCode.UnexpectedError;
+                }
+            );
+        });
+
+        return await app.RunAsync(args);
     }
 
-    public static ServiceProvider ConfigureServices()
+    private static string ToolVersion =>
+        typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "2.0.0";
+
+    /// <summary>Registers every service the CLI needs. Public so tests can assert the graph resolves.</summary>
+    public static ServiceProvider ConfigureServices() =>
+        BuildServiceCollection().BuildServiceProvider();
+
+    internal static IServiceCollection BuildServiceCollection()
     {
         var services = new ServiceCollection();
 
-        // Original services
+        // Infrastructure
+        services.AddSingleton<IFileSystem, PhysicalFileSystem>();
+        services.AddSingleton<IProjectDiscoveryService, ProjectDiscoveryService>();
+        services.AddSingleton<IDotNetCliService, DotNetCliService>();
+        services.AddSingleton<IPackageGraphService, PackageGraphService>();
+        services.AddSingleton<INuGetFeedService>(_ => new NuGetFeedService());
+        services.AddSingleton<ConfigurationLoader>();
+        services.AddScoped<EffectiveSettings>();
+
+        // Migration
+        services.AddSingleton<IVersionConflictResolver, VersionConflictResolver>();
+        services.AddSingleton<VersionSelector>();
+        services.AddSingleton<IBackupService, BackupService>();
+        services.AddSingleton<IMigrationService, MigrationService>();
+
+        // Analysis
+        services.AddSingleton<IBaselineService, BaselineService>();
+        services.AddSingleton<IAnalysisEngine, AnalysisEngine>();
+        services.AddSingleton<IAutoFixService, AutoFixService>();
+
+        // Workspace tooling
+        services.AddSingleton<IVerificationService, VerificationService>();
+        services.AddSingleton<IPackageUpdateService, PackageUpdateService>();
+        services.AddSingleton<DependencyTreeService>();
+        services.AddSingleton<DoctorService>();
+        services.AddSingleton<StatusService>();
+        services.AddSingleton<BatchService>();
+
+        // CLI commands
+        services.AddTransient<Cli.Commands.MigrateCommand>();
+        services.AddTransient<Cli.Commands.BuildPropsCommand>();
+        services.AddTransient<AllCommand>();
+        services.AddTransient<RevertCommand>();
+        services.AddTransient<AnalyzeCommand>();
+        services.AddTransient<UpdateCommand>();
+        services.AddTransient<VerifyCommand>();
+        services.AddTransient<TreeCommand>();
+        services.AddTransient<StatusCommand>();
+        services.AddTransient<DoctorCommand>();
+        services.AddTransient<InitCommand>();
+        services.AddTransient<ExplainCommand>();
+        services.AddTransient<BatchCommand>();
+        services.AddTransient<BackupListCommand>();
+        services.AddTransient<BackupRestoreCommand>();
+        services.AddTransient<BackupPruneCommand>();
+        services.AddTransient<CompletionsCommand>();
+
+        RegisterLegacyServices(services);
+
+        return services;
+    }
+
+    /// <summary>
+    /// The original analyzer/generator pipeline. Still registered so the public API stays stable
+    /// for anyone consuming CentralConfigGenerator.Core directly.
+    /// </summary>
+    private static void RegisterLegacyServices(IServiceCollection services)
+    {
         services.AddSingleton<IProjectAnalyzer, ProjectAnalyzer>();
         services.AddSingleton<IPackageAnalyzer, PackageAnalyzer>();
         services.AddSingleton<IBuildPropsGenerator, BuildPropsGenerator>();
         services.AddSingleton<IPackagesPropsGenerator, PackagesPropsGenerator>();
-
-        // Enhanced services
-        services.AddSingleton<IVersionConflictResolver, VersionConflictResolver>();
         services.AddSingleton<IEnhancedPackageAnalyzer, EnhancedPackageAnalyzer>();
         services.AddSingleton<IVersionConflictVisualizer, VersionConflictVisualizer>();
         services.AddSingleton<IVersionCompatibilityChecker, VersionCompatibilityChecker>();
 
-        // Commands
-        services.AddTransient<BuildPropsCommand>();
-        services.AddTransient<PackagesPropsCommand>();
-        services.AddTransient<EnhancedPackagesPropsCommand>();
-
-        // Common services
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IProjectFileService, ProjectFileService>();
 
-        return services.BuildServiceProvider();
+        services.AddTransient<Commands.BuildPropsCommand>();
+        services.AddTransient<PackagesPropsCommand>();
+        services.AddTransient<EnhancedPackagesPropsCommand>();
     }
 }

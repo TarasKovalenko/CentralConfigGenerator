@@ -6,10 +6,20 @@ namespace CentralConfigGenerator.Core.Services;
 
 public enum VersionResolutionStrategy
 {
+    /// <summary>Pick the highest version any project asks for. The safe default.</summary>
     Highest,
+
+    /// <summary>Pick the lowest version, keeping the migration as conservative as possible.</summary>
     Lowest,
+
+    /// <summary>Pick whichever version the most projects already use.</summary>
     MostCommon,
+
+    /// <summary>Refuse to guess and let the caller decide.</summary>
     Manual,
+
+    /// <summary>Abort the run when projects disagree.</summary>
+    Fail,
 }
 
 public class VersionConflictResolver : IVersionConflictResolver
@@ -49,6 +59,10 @@ public class VersionConflictResolver : IVersionConflictResolver
             VersionResolutionStrategy.MostCommon => ResolveMostCommon(versionList),
             VersionResolutionStrategy.Manual => throw new InvalidOperationException(
                 $"Manual resolution required for package '{packageName}'. Versions found: {string.Join(", ", versionList)}"
+            ),
+            VersionResolutionStrategy.Fail => throw new VersionConflictException(
+                packageName,
+                versionList
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(strategy)),
         };
