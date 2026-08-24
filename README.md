@@ -395,7 +395,7 @@ Key types: `MigrationService`, `AnalysisEngine`, `AutoFixService`, `Verification
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Build and test with:
+See [CONTRIBUTING.md](CONTRIBUTING.md). Building the repository needs the .NET 10 SDK — it compiles all three target frameworks, so it is the only one you have to install.
 
 ```bash
 dotnet build
