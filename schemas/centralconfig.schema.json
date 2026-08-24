@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/TarasKovalenko/CentralConfigGenerator/main/schemas/centralconfig.schema.json",
+  "title": "CentralConfigGenerator configuration",
+  "description": "Repository defaults for the central-config tool. Every value is optional; the command line always wins.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "conflictStrategy": {
+      "description": "How to resolve a package referenced with more than one version.",
+      "enum": [
+        "Highest",
+        "Lowest",
+        "MostCommon",
+        "Fail",
+        "Manual"
+      ],
+      "default": "Highest"
+    },
+    "backup": {
+      "type": "boolean",
+      "default": true,
+      "description": "Take a timestamped backup before writing."
+    },
+    "backupDir": {
+      "type": "string",
+      "description": "Where backups are stored. Defaults to the scanned directory."
+    },
+    "addGitignore": {
+      "type": "boolean",
+      "default": false,
+      "description": "Add the backup folder to .gitignore."
+    },
+    "failOn": {
+      "enum": [
+        "Never",
+        "Info",
+        "Low",
+        "Moderate",
+        "High",
+        "Critical"
+      ],
+      "default": "Info",
+      "description": "Exit non-zero at or above this severity. Use Never to always exit 0."
+    },
+    "baseline": {
+      "type": "string",
+      "description": "Path to a baseline file whose findings are suppressed."
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Backup pruning policy.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "maxBackups": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "description": "Per-rule severity overrides. Use \"none\" to disable a rule.",
+      "propertyNames": {
+        "enum": [
+          "SecurityVulnerability",
+          "InlineVersionUnderCpm",
+          "LicenseRisk",
+          "VersionInconsistency",
+          "FloatingVersion",
+          "TransitiveConflict",
+          "DuplicatePackageCasing",
+          "RedundantReference",
+          "OutdatedPackage",
+          "DeprecatedPackage",
+          "FrameworkAlignment",
+          "PrereleaseInProduction",
+          "MissingCentralVersion",
+          "OrphanedPackageVersion",
+          "UnpinnedTransitiveDependency",
+          "PropertyDrift"
+        ]
+      },
+      "additionalProperties": {
+        "enum": [
+          "Never",
+          "Info",
+          "Low",
+          "Moderate",
+          "High",
+          "Critical",
+          "none",
+          "off",
+          "disabled"
+        ]
+      }
+    },
+    "excludeDirs": {
+      "type": "string",
+      "description": "Regex of directory names to skip. bin/obj/node_modules are always skipped."
+    },
+    "transitivePinning": {
+      "type": "boolean",
+      "default": false,
+      "description": "Emit CentralPackageTransitivePinningEnabled."
+    },
+    "ignorePrerelease": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prefer stable versions when resolving conflicts."
+    },
+    "lineEnding": {
+      "enum": [
+        "Preserve",
+        "Lf",
+        "CrLf",
+        "Cr"
+      ],
+      "default": "Preserve",
+      "description": "Line endings to write."
+    },
+    "encoding": {
+      "type": "string",
+      "description": "IANA encoding name to write files with, e.g. utf-8. Defaults to preserving each file's own encoding."
+    },
+    "buildProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "MSBuild properties eligible for hoisting into Directory.Build.props."
+    },
+    "ignorePackages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Package ids that analysis skips. A trailing * matches a prefix."
+    },
+    "sourceDirectory": {
+      "type": "string",
+      "description": "Default directory to scan when none is given."
+    }
+  }
+}

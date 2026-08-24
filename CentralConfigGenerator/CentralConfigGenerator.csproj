@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IncludeBuildOutput>true</IncludeBuildOutput>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>CentralConfigGenerator</PackageId>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>central-config</ToolCommandName>
@@ -13,13 +13,18 @@
     <PropertyGroup>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>
-            A modern .NET tool for automatically generating centralized configuration files for .NET projects.
-            CentralConfig analyzes your solution structure and creates properly configured `Directory.Build.props` and `Directory.Packages.props` files to standardize settings across your projects.
+            Migrate .NET solutions to Central Package Management and keep them healthy.
+            Generates Directory.Packages.props and Directory.Build.props, verifies the resolved package graph is unchanged,
+            audits dependencies for vulnerabilities, deprecations, licence risk and version drift, applies auto-fixes,
+            and updates packages with test-backed rollback. Supports C#, F# and VB, dry-run diffs, backups and rollback,
+            SARIF/JSON/Markdown/CSV reports, and CI-friendly exit codes.
         </Description>
-        <Version>1.1.1</Version>
+        <Version>2.0.0</Version>
+        <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        <FileVersion>2.0.0.0</FileVersion>
         <Authors>Taras Kovalenko</Authors>
         <Copyright>Copyright Taras Kovalenko</Copyright>
-        <PackageTags>dotnet;msbuild;build;props;packages;centralized;configuration;directory-build-props;sdk;cli;tool;nuget;CPM;centralised</PackageTags>
+        <PackageTags>dotnet;msbuild;build;props;packages;centralized;centralised;configuration;directory-build-props;directory-packages-props;sdk;cli;tool;nuget;cpm;migration;audit;vulnerabilities;sarif;dependencies;devops</PackageTags>
         <Product>CentralConfigGenerator</Product>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/TarasKovalenko/CentralConfigGenerator</PackageProjectUrl>
@@ -29,6 +34,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="CentralConfigGenerator.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\CentralConfigGenerator.Core\CentralConfigGenerator.Core.csproj"/>
     </ItemGroup>
 
@@ -36,10 +45,10 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="Spectre.Console"/>
         <PackageReference Include="Spectre.Console.Cli"/>
-        <PackageReference Include="System.CommandLine"/>
     </ItemGroup>
 
     <ItemGroup>
         <None Include="..\README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\LICENSE" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>
