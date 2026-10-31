@@ -11,7 +11,7 @@ public sealed class DoctorSettings : WorkspaceSettings;
 /// <summary>Environment diagnostics: run this first when something behaves unexpectedly.</summary>
 public sealed class DoctorCommand(DoctorService doctorService) : AsyncCommand<DoctorSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, DoctorSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, DoctorSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

@@ -37,7 +37,7 @@ public sealed class BuildPropsCommand(
     EffectiveSettings effective
 ) : AsyncCommand<BuildPropsSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, BuildPropsSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, BuildPropsSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

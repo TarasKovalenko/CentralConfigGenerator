@@ -29,7 +29,7 @@ public class BackupSettings : CommandSettings
 /// <summary>Lists every backup this tool has taken.</summary>
 public sealed class BackupListCommand(IBackupService backupService) : Command<BackupSettings>
 {
-    public override int Execute(CommandContext context, BackupSettings settings)
+    public override int Execute(CommandContext context, BackupSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
 
@@ -89,7 +89,8 @@ public sealed class BackupRestoreCommand(IBackupService backupService)
 {
     public override async Task<int> ExecuteAsync(
         CommandContext context,
-        BackupRestoreSettings settings
+        BackupRestoreSettings settings,
+        CancellationToken cancellationToken
     )
     {
         Ui.Quiet = settings.Quiet;
@@ -156,7 +157,7 @@ public sealed class BackupPruneSettings : BackupSettings
 /// <summary>Deletes old backup sets.</summary>
 public sealed class BackupPruneCommand(IBackupService backupService) : Command<BackupPruneSettings>
 {
-    public override int Execute(CommandContext context, BackupPruneSettings settings)
+    public override int Execute(CommandContext context, BackupPruneSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
 

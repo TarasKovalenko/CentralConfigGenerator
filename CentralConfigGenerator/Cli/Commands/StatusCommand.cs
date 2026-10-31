@@ -18,7 +18,7 @@ public sealed class StatusSettings : WorkspaceSettings
 /// <summary>A one-shot dashboard of the workspace and what to do next.</summary>
 public sealed class StatusCommand(StatusService statusService) : AsyncCommand<StatusSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, StatusSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, StatusSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

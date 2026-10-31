@@ -43,7 +43,7 @@ public sealed class BatchCommand(
     EffectiveSettings effective
 ) : AsyncCommand<BatchSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, BatchSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, BatchSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

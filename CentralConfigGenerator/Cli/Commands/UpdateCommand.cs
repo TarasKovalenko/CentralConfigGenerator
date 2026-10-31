@@ -38,7 +38,7 @@ public sealed class UpdateSettings : MutatingSettings
 public sealed class UpdateCommand(IPackageUpdateService updateService, EffectiveSettings effective)
     : AsyncCommand<UpdateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

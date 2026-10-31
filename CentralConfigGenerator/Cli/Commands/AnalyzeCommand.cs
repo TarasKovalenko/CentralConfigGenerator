@@ -96,7 +96,7 @@ public sealed class AnalyzeCommand(
     EffectiveSettings effective
 ) : AsyncCommand<AnalyzeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

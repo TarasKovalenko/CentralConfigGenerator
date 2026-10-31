@@ -31,7 +31,7 @@ public sealed class VerifyCommand(
     EffectiveSettings effective
 ) : AsyncCommand<VerifySettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, VerifySettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, VerifySettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

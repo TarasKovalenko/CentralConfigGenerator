@@ -13,7 +13,7 @@ public sealed class RevertSettings : MutatingSettings;
 public sealed class RevertCommand(IMigrationService migrationService, EffectiveSettings effective)
     : AsyncCommand<RevertSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, RevertSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, RevertSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

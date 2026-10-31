@@ -14,5 +14,7 @@
         <PackageReference Include="NuGet.Versioning"/>
         <PackageReference Include="Spectre.Console"/>
         <PackageReference Include="Spectre.Console.Cli"/>
+        <!-- Lifts the vulnerable transitive version pulled in by NuGet.Packaging; see Directory.Packages.props. -->
+        <PackageReference Include="System.Security.Cryptography.Pkcs"/>
     </ItemGroup>
 </Project>

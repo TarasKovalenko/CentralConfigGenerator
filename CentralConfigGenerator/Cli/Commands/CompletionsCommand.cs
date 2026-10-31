@@ -79,7 +79,7 @@ public sealed class CompletionsCommand : Command<CompletionsSettings>
         "--help",
     ];
 
-    public override int Execute(CommandContext context, CompletionsSettings settings)
+    public override int Execute(CommandContext context, CompletionsSettings settings, CancellationToken cancellationToken)
     {
         var script = Render(settings.Shell);
 
