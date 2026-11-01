@@ -9,7 +9,7 @@ public sealed class AllSettings : MigrateSettings;
 /// <summary>Generates both Directory.Build.props and Directory.Packages.props in one pass.</summary>
 public sealed class AllCommand(MigrateCommand migrate) : AsyncCommand<AllSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AllSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, AllSettings settings, CancellationToken cancellationToken)
     {
         // The migration already knows how to hoist properties; --unify-props is what "all" means.
         var combined = settings;
@@ -48,6 +48,6 @@ public sealed class AllCommand(MigrateCommand migrate) : AsyncCommand<AllSetting
             IncludeFSharp = combined.IncludeFSharp,
         };
 
-        return await migrate.ExecuteAsync(context, migrateSettings);
+        return await migrate.ExecuteAsync(context, migrateSettings, cancellationToken);
     }
 }

@@ -96,7 +96,10 @@ public sealed class NuGetFeedService : INuGetFeedService, IDisposable
             {
                 var resource = await repository.GetResourceAsync<PackageMetadataResource>(
                     cancellationToken
-                );
+                )
+                    ?? throw new InvalidOperationException(
+                        $"Package source {repository.PackageSource.Source} does not expose package metadata."
+                    );
 
                 var metadata = (
                     await resource.GetMetadataAsync(

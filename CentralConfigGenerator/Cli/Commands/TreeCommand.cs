@@ -17,7 +17,7 @@ public sealed class TreeSettings : WorkspaceSettings
 /// <summary>Prints the resolved dependency graph as an ASCII tree.</summary>
 public sealed class TreeCommand(DependencyTreeService treeService) : AsyncCommand<TreeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, TreeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TreeSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;

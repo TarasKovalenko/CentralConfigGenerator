@@ -39,7 +39,10 @@ public class VersionCompatibilityChecker : IVersionCompatibilityChecker
         {
             var metadataResource = await _repository.GetResourceAsync<PackageMetadataResource>(
                 cancellationToken
-            );
+            )
+                ?? throw new InvalidOperationException(
+                    "The package source does not expose package metadata."
+                );
             var searchMetadata = await metadataResource.GetMetadataAsync(
                 packageId,
                 includePrerelease: true,

@@ -24,7 +24,7 @@ public sealed class InitSettings : CommandSettings
 /// <summary>Scaffolds a .centralconfig.json so the team shares one set of defaults.</summary>
 public sealed class InitCommand(ConfigurationLoader loader) : AsyncCommand<InitSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, InitSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, InitSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
 

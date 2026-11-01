@@ -18,7 +18,7 @@ public sealed class ExplainSettings : CommandSettings
 /// <summary>Documents what a rule looks for and why it matters.</summary>
 public sealed class ExplainCommand : Command<ExplainSettings>
 {
-    public override int Execute(CommandContext context, ExplainSettings settings)
+    public override int Execute(CommandContext context, ExplainSettings settings, CancellationToken cancellationToken)
     {
         var rules = RuleCatalog.CreateAll();
 

@@ -75,7 +75,7 @@ public class MigrateCommand(
     EffectiveSettings effective
 ) : AsyncCommand<MigrateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, MigrateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, MigrateSettings settings, CancellationToken cancellationToken)
     {
         Ui.Quiet = settings.Quiet;
         Ui.Verbose = settings.Verbose;
