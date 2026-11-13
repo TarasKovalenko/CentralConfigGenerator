@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- Targets `net10.0` and `net11.0`. `net8.0` and `net9.0` are no longer shipped, so the tool now needs the .NET 10 runtime or later.
+
 ## 2.0.0
 
 A rewrite around one idea: migrating to Central Package Management should be provable, reversible, and only the beginning of keeping dependencies healthy.
