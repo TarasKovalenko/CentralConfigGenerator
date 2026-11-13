@@ -21,12 +21,12 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       # The .NET 10 SDK builds every framework the tool targets, so one SDK is enough.
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -57,7 +57,7 @@ jobs:
             -p:Version=${{ steps.version.outputs.version }} \
             -o artifacts/packages
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ steps.version.outputs.version }}
           path: artifacts/packages/*.*nupkg
