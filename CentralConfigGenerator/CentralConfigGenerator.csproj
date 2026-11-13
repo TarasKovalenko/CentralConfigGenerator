@@ -19,9 +19,9 @@
             and updates packages with test-backed rollback. Supports C#, F# and VB, dry-run diffs, backups and rollback,
             SARIF/JSON/Markdown/CSV reports, and CI-friendly exit codes.
         </Description>
-        <Version>2.0.0</Version>
-        <AssemblyVersion>2.0.0.0</AssemblyVersion>
-        <FileVersion>2.0.0.0</FileVersion>
+        <Version>3.0.0</Version>
+        <AssemblyVersion>3.0.0.0</AssemblyVersion>
+        <FileVersion>3.0.0.0</FileVersion>
         <Authors>Taras Kovalenko</Authors>
         <Copyright>Copyright Taras Kovalenko</Copyright>
         <PackageTags>dotnet;msbuild;build;props;packages;centralized;centralised;configuration;directory-build-props;directory-packages-props;sdk;cli;tool;nuget;cpm;migration;audit;vulnerabilities;sarif;dependencies;devops</PackageTags>
