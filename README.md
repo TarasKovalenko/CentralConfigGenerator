@@ -28,7 +28,7 @@ To learn more about the war and how you can help, [click here](https://war.ukrai
 dotnet tool install --global CentralConfigGenerator
 ```
 
-Requires the .NET SDK 8.0 or later. The tool ships for `net8.0`, `net9.0` and `net10.0`.
+Requires the .NET SDK 10.0 or later. The tool ships for `net10.0` and `net11.0`.
 
 ```bash
 dotnet tool update --global CentralConfigGenerator   # upgrade
@@ -347,7 +347,7 @@ central-config batch ./repos --parallel --continue --dry-run
 - Terminal, JSON, SARIF 2.1.0, Markdown and CSV reports, to stdout or a file.
 - Stable exit codes 0–9 so scripts can branch on the outcome.
 - Private feeds through `nuget.config`; shell completions for bash, zsh, fish and PowerShell.
-- Ships for `net8.0`, `net9.0` and `net10.0`.
+- Ships for `net10.0` and `net11.0`.
 
 ---
 
