@@ -1,10 +1,17 @@
 # Changelog
 
-## Unreleased
+## [3.0.0] - 2026-11-13
 
 ### Breaking changes
 
 - Targets `net10.0` and `net11.0`. `net8.0` and `net9.0` are no longer shipped, so the tool now needs the .NET 10 runtime or later.
+
+### Changes
+
+- NuGet.Configuration, NuGet.Protocol and NuGet.Versioning 6.13.2 -> 8.0.0.
+- Spectre.Console and Spectre.Console.Cli 0.50.0 -> 0.57.2.
+- Microsoft.Extensions.DependencyInjection 9.0.4 -> 11.0.0.
+- System.Security.Cryptography.Pkcs pinned to 11.0.0 to avoid the vulnerable 8.0.1 pulled in by NuGet.Packaging (CVE-2026-70162, CVE-2026-84008).
 
 ## 2.0.0
 
